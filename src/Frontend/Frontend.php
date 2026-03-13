@@ -18,12 +18,22 @@ class Frontend
     {
         // Example: To activate frontend hooks, uncomment below.
         // add_action('wp_enqueue_scripts', array($this, 'enqueue_scripts'));
+        add_filter('language_attributes', array($this, 'velocitytheme_color_scheme'));
         
         // Filter with priority and number of arguments
         // add_filter('excerpt_length', array($this, 'custom_excerpt_length'), 999, 1);
         
         // Trigger a custom action (so other devs can hook into your plugin)
         // do_action('custom_plugin_after_frontend_init', $this);
+    }
+
+    /**
+     * Adds a data-bs-theme attribute to the <html> tag based on a cookie.
+     */
+    public function velocitytheme_color_scheme($output)
+    {
+        $color_scheme = isset($_COOKIE["color_scheme"]) ? sanitize_text_field($_COOKIE["color_scheme"]) : 'light';
+        return $output . ' data-bs-theme="' . esc_attr($color_scheme) . '"';
     }
 
     /**
