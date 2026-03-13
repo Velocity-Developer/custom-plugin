@@ -7,12 +7,13 @@
     "clean": "shx rm -rf dist custom-plugin",
     "prebuild": "npm run clean && shx mkdir -p dist custom-plugin",
     "copy": "shx cp -r assets src templates custom-plugin.php index.php uninstall.php README.md custom-plugin/",
-    "zip": "bestzip dist/custom-plugin-1.0.0.zip custom-plugin/",
+    "zip": "cross-var bestzip dist/custom-plugin-$npm_package_version.zip custom-plugin/",
     "postbuild": "shx rm -rf custom-plugin",
     "build": "npm run prebuild && npm run copy && npm run zip && npm run postbuild"
   },
   "devDependencies": {
     "bestzip": "^2.2.1",
+    "cross-var": "^1.1.0",
     "shx": "^0.3.4"
   }
 }

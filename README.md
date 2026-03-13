@@ -44,7 +44,7 @@ Untuk menghasilkan file plugin yang siap didistribusikan:
 npm run build
 ```
 
-File zip akan tersedia di folder `/dist/custom-plugin-1.0.0.zip`.
+File zip akan tersedia di folder `/dist/`. Nama file akan mengikuti versi yang ada di `package.json` (contoh: `custom-plugin-1.0.0.zip`).
 
 ## 📁 Struktur Folder
 
