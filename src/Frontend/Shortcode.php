@@ -2,55 +2,51 @@
 
 namespace CustomPlugin\Frontend;
 
-use CustomPlugin\Core\SubmissionModel;
 use CustomPlugin\Core\Template;
 
 if (!defined('ABSPATH')) {
     exit;
 }
 
+/**
+ * Class Shortcode
+ * 
+ * Best practice for Shortcode implementation.
+ */
 class Shortcode
 {
 
     public function __construct()
     {
-        add_shortcode('custom_form', array($this, 'custom_form_shortcode'));
-        add_shortcode('custom_message', array($this, 'custom_message_shortcode'));
-        add_shortcode('custom_data', array($this, 'custom_data_shortcode'));
+        // Example: To activate, uncomment the line below.
+        // add_shortcode('custom_hello', array($this, 'hello_shortcode'));
     }
 
-    public function custom_form_shortcode($atts)
+    /**
+     * Shortcode: [custom_hello name="User"]
+     * 
+     * @param array $atts
+     * @return string
+     */
+    public function hello_shortcode($atts)
     {
-        $atts = shortcode_atts(array(
-            'button_text' => 'Kirim'
-        ), $atts, 'custom_form');
+        // 1. Define default attributes and merge with user inputs
+        $atts = shortcode_atts(
+            array(
+                'name' => 'User',
+                'color' => 'blue'
+            ),
+            $atts,
+            'custom_hello'
+        );
 
-        return Frontend::display_form();
-    }
+        // 2. Data to pass to template (Logic)
+        $data = array(
+            'name'  => sanitize_text_field($atts['name']),
+            'color' => sanitize_hex_color($atts['color']) ?: 'blue'
+        );
 
-    public function custom_message_shortcode($atts)
-    {
-        $atts = shortcode_atts(array(
-            'text' => 'Halo Dunia!',
-            'style' => 'default'
-        ), $atts, 'custom_message');
-
-        $class = 'custom-plugin-message-' . sanitize_html_class($atts['style']);
-        return '<div class="' . esc_attr($class) . '">' . esc_html($atts['text']) . '</div>';
-    }
-
-    public function custom_data_shortcode($atts)
-    {
-        $atts = shortcode_atts(array(
-            'limit' => 10,
-            'orderby' => 'created_at',
-            'order' => 'DESC'
-        ), $atts, 'custom_data');
-
-        $results = SubmissionModel::get_all($atts);
-
-        return Template::get('frontend/data-table', array(
-            'results' => $results
-        ));
+        // 3. Render using Template Engine (Separation of Concerns)
+        return Template::get('frontend/hello-message', $data);
     }
 }

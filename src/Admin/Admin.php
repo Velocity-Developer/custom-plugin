@@ -8,78 +8,55 @@ if (!defined('ABSPATH')) {
     exit;
 }
 
+/**
+ * Class Admin
+ * 
+ * Best practice for WordPress Admin Menu and Hooks.
+ */
 class Admin
 {
 
     public function __construct()
     {
-        add_action('admin_menu', array($this, 'add_admin_menu'));
-        add_action('admin_enqueue_scripts', array($this, 'enqueue_scripts'));
-        add_action('admin_init', array($this, 'init'));
+        // Example: Uncomment to activate admin dashboard menu.
+        // add_action('admin_menu', array($this, 'add_admin_menu'));
+        // add_action('admin_enqueue_scripts', array($this, 'enqueue_scripts'));
     }
 
-    public function init()
-    {
-        register_setting('custom_plugin_settings', 'custom_plugin_settings');
-    }
-
+    /**
+     * Proper way to add an Admin Menu Page.
+     */
     public function add_admin_menu()
     {
         add_menu_page(
-            'Plugin Kustom',
-            'Plugin Kustom',
-            'manage_options',
-            'custom-plugin',
-            array($this, 'admin_page'),
-            'dashicons-admin-plugins',
-            30
-        );
-
-        /*
-        add_submenu_page(
-            'custom-plugin',
-            'Kiriman Formulir',
-            'Kiriman',
-            'manage_options',
-            'custom-plugin-submissions',
-            array($this, 'submissions_page')
-        );
-        */
-
-        add_submenu_page(
-            'custom-plugin',
-            'Pengaturan',
-            'Pengaturan',
-            'manage_options',
-            'custom-plugin-settings',
-            array($this, 'settings_page')
+            __('Custom Plugin', 'custom-plugin'), // Page Title
+            __('Plugin Kustom', 'custom-plugin'), // Menu Title
+            'manage_options',                    // Capability
+            'custom-plugin',                     // Menu Slug
+            array($this, 'admin_page'),          // Callback
+            'dashicons-admin-plugins',           // Icon
+            30                                   // Position
         );
     }
 
-    public function admin_page()
-    {
-        Template::render('admin/admin-page');
-    }
-
-    public function submissions_page()
-    {
-        Template::render('admin/submissions-page');
-    }
-
-    public function settings_page()
-    {
-        Template::render('admin/settings-page');
-    }
-
+    /**
+     * Proper way to enqueue scripts for Admin Dashboard only.
+     * 
+     * @param string $hook
+     */
     public function enqueue_scripts($hook)
     {
+        // Only load assets on our plugin's pages.
         if (strpos($hook, 'custom-plugin') !== false) {
-            // Enqueue Alpine.js only if not already enqueued or registered
-            if (!wp_script_is('alpinejs', 'enqueued') && !wp_script_is('alpine', 'enqueued') && !wp_script_is('custom-plugin-alpine', 'enqueued')) {
-                wp_enqueue_script('alpinejs', 'https://unpkg.com/alpinejs@3.13.3/dist/cdn.min.js', array(), '3.13.3', true);
-            }
-
-            wp_enqueue_style('custom-plugin-admin', CUSTOM_PLUGIN_URL . 'assets/admin/css/admin.css', array(), time()); // Use time() for cache busting
+            // wp_enqueue_style('custom-plugin-admin', CUSTOM_PLUGIN_URL . 'assets/admin/css/admin.css', array(), time()); // Use time() for cache busting during development
         }
+    }
+
+    /**
+     * Admin Dashboard Callback.
+     */
+    public function admin_page()
+    {
+        Template::render('admin/dashboard');
     }
 }
