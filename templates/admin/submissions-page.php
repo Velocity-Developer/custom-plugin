@@ -16,7 +16,7 @@ $results = $wpdb->get_results("SELECT * FROM $table_name ORDER BY created_at DES
 ?>
 
 <div class="wrap">
-  <h1 class="wp-heading-inline mb-6"><?php _e('Form Submissions', 'custom-plugin'); ?></h1>
+  <h1 class="wp-heading-inline mb-6">Kiriman Formulir</h1>
 
   <div class="custom-plugin-container max-w-full mt-5">
 
@@ -27,8 +27,8 @@ $results = $wpdb->get_results("SELECT * FROM $table_name ORDER BY created_at DES
           <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
             <path vector-effect="non-scaling-stroke" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 13h6m-3-3v6m-9 1V7a2 2 0 012-2h6l2 2h6a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2z" />
           </svg>
-          <h3 class="mt-2 text-sm font-medium text-gray-900"><?php _e('No submissions found', 'custom-plugin'); ?></h3>
-          <p class="mt-1 text-sm text-gray-500"><?php _e('Get started by submitting a form on the frontend.', 'custom-plugin'); ?></p>
+          <h3 class="mt-2 text-sm font-medium text-gray-900">Tidak ada kiriman ditemukan</h3>
+          <p class="mt-1 text-sm text-gray-500">Mulai dengan mengirimkan formulir di frontend.</p>
         </div>
       <?php else : ?>
         <div class="overflow-x-auto">
@@ -36,19 +36,19 @@ $results = $wpdb->get_results("SELECT * FROM $table_name ORDER BY created_at DES
             <thead class="bg-gray-50">
               <tr>
                 <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  <?php _e('ID', 'custom-plugin'); ?>
+                  ID
                 </th>
                 <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  <?php _e('Date', 'custom-plugin'); ?>
+                  Tanggal
                 </th>
                 <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  <?php _e('Name', 'custom-plugin'); ?>
+                  Nama
                 </th>
                 <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  <?php _e('Email', 'custom-plugin'); ?>
+                  Email
                 </th>
                 <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  <?php _e('Message', 'custom-plugin'); ?>
+                  Pesan
                 </th>
               </tr>
             </thead>

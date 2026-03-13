@@ -24,8 +24,8 @@ class Admin
     public function add_admin_menu()
     {
         add_menu_page(
-            __('Custom Plugin', 'custom-plugin'),
-            __('Custom Plugin', 'custom-plugin'),
+            'Plugin Kustom',
+            'Plugin Kustom',
             'manage_options',
             'custom-plugin',
             array($this, 'admin_page'),
@@ -36,8 +36,8 @@ class Admin
         /*
         add_submenu_page(
             'custom-plugin',
-            __('Form Submissions', 'custom-plugin'),
-            __('Submissions', 'custom-plugin'),
+            'Kiriman Formulir',
+            'Kiriman',
             'manage_options',
             'custom-plugin-submissions',
             array($this, 'submissions_page')
@@ -46,8 +46,8 @@ class Admin
 
         add_submenu_page(
             'custom-plugin',
-            __('Settings', 'custom-plugin'),
-            __('Settings', 'custom-plugin'),
+            'Pengaturan',
+            'Pengaturan',
             'manage_options',
             'custom-plugin-settings',
             array($this, 'settings_page')

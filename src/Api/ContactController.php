@@ -29,11 +29,11 @@ class ContactController
 
     // Validation
     if (empty($params['name']) || empty($params['email'])) {
-      return new \WP_Error('missing_params', __('Name and Email are required.', 'custom-plugin'), array('status' => 400));
+      return new \WP_Error('missing_params', 'Nama dan Email wajib diisi.', array('status' => 400));
     }
 
     if (!is_email($params['email'])) {
-      return new \WP_Error('invalid_email', __('Invalid email address.', 'custom-plugin'), array('status' => 400));
+      return new \WP_Error('invalid_email', 'Alamat email tidak valid.', array('status' => 400));
     }
 
     // Verify Nonce (Optional but recommended for frontend forms if user is logged in, but for public forms, maybe captcha? For now, we'll skip complex nonce checks or just rely on a generic nonce passed from frontend)
@@ -65,12 +65,12 @@ class ContactController
     );
 
     if ($result === false) {
-      return new \WP_Error('db_error', __('Failed to save data.', 'custom-plugin'), array('status' => 500));
+      return new \WP_Error('db_error', 'Gagal menyimpan data.', array('status' => 500));
     }
 
     return rest_ensure_response(array(
       'success' => true,
-      'message' => __('Thank you! Your message has been sent.', 'custom-plugin')
+      'message' => 'Terima kasih! Pesan Anda telah dikirim.'
     ));
   }
 }

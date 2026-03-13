@@ -26,17 +26,17 @@ class Taxonomies
     private function register_project_category()
     {
         $labels = array(
-            'name'              => _x('Project Categories', 'taxonomy general name', 'custom-plugin'),
-            'singular_name'     => _x('Project Category', 'taxonomy singular name', 'custom-plugin'),
-            'search_items'      => __('Search Project Categories', 'custom-plugin'),
-            'all_items'         => __('All Project Categories', 'custom-plugin'),
-            'parent_item'       => __('Parent Project Category', 'custom-plugin'),
-            'parent_item_colon' => __('Parent Project Category:', 'custom-plugin'),
-            'edit_item'         => __('Edit Project Category', 'custom-plugin'),
-            'update_item'       => __('Update Project Category', 'custom-plugin'),
-            'add_new_item'      => __('Add New Project Category', 'custom-plugin'),
-            'new_item_name'     => __('New Project Category Name', 'custom-plugin'),
-            'menu_name'         => __('Project Categories', 'custom-plugin'),
+            'name'              => 'Kategori Proyek',
+            'singular_name'     => 'Kategori Proyek',
+            'search_items'      => 'Cari Kategori Proyek',
+            'all_items'         => 'Semua Kategori Proyek',
+            'parent_item'       => 'Induk Kategori Proyek',
+            'parent_item_colon' => 'Induk Kategori Proyek:',
+            'edit_item'         => 'Edit Kategori Proyek',
+            'update_item'       => 'Perbarui Kategori Proyek',
+            'add_new_item'      => 'Tambah Kategori Proyek Baru',
+            'new_item_name'     => 'Nama Kategori Proyek Baru',
+            'menu_name'         => 'Kategori Proyek',
         );
 
         $args = array(

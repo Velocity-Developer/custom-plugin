@@ -36,8 +36,6 @@ class Plugin
 
   public function init()
   {
-    load_plugin_textdomain('custom-plugin', false, dirname(plugin_basename(CUSTOM_PLUGIN_FILE)) . '/languages');
-
     // Initialize modules
     new Admin();
     new Frontend();
@@ -57,7 +55,7 @@ class Plugin
     add_option('custom_plugin_settings', array(
       'enable_feature_1' => true,
       'enable_feature_2' => false,
-      'custom_message' => __('Welcome to Custom Plugin!', 'custom-plugin')
+      'custom_message' => 'Selamat datang di Custom Plugin!'
     ));
 
     flush_rewrite_rules();

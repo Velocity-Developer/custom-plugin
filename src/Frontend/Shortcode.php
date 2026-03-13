@@ -19,7 +19,7 @@ class Shortcode
     public function custom_form_shortcode($atts)
     {
         $atts = shortcode_atts(array(
-            'button_text' => __('Submit', 'custom-plugin')
+            'button_text' => 'Kirim'
         ), $atts, 'custom_form');
 
         return Frontend::display_form();
@@ -28,7 +28,7 @@ class Shortcode
     public function custom_message_shortcode($atts)
     {
         $atts = shortcode_atts(array(
-            'text' => __('Hello World!', 'custom-plugin'),
+            'text' => 'Halo Dunia!',
             'style' => 'default'
         ), $atts, 'custom_message');
 
@@ -59,20 +59,20 @@ class Shortcode
         $results = $wpdb->get_results($query);
 
         if (empty($results)) {
-            return '<p>' . __('No data found.', 'custom-plugin') . '</p>';
+            return '<p>Tidak ada data ditemukan.</p>';
         }
 
         ob_start();
 ?>
         <div class="custom-plugin-data">
-            <h3><?php _e('Latest Submissions', 'custom-plugin'); ?></h3>
+            <h3>Kiriman Terbaru</h3>
             <table class="custom-plugin-table">
                 <thead>
                     <tr>
-                        <th><?php _e('Name', 'custom-plugin'); ?></th>
-                        <th><?php _e('Email', 'custom-plugin'); ?></th>
-                        <th><?php _e('Message', 'custom-plugin'); ?></th>
-                        <th><?php _e('Date', 'custom-plugin'); ?></th>
+                        <th>Nama</th>
+                        <th>Email</th>
+                        <th>Pesan</th>
+                        <th>Tanggal</th>
                     </tr>
                 </thead>
                 <tbody>

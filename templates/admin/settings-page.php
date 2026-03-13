@@ -30,7 +30,7 @@ if (!defined('ABSPATH')) {
     </div>
 
     <div class="bg-white rounded-lg shadow-md p-6 mb-6">
-      <h2 class="text-xl font-semibold mb-4 border-b pb-2 text-gray-800"><?php _e('General Settings', 'custom-plugin'); ?></h2>
+      <h2 class="text-xl font-semibold mb-4 border-b pb-2 text-gray-800">Pengaturan Umum</h2>
 
       <!-- Loading State -->
       <div x-show="loading" class="animate-pulse space-y-4">
@@ -45,23 +45,23 @@ if (!defined('ABSPATH')) {
         <div class="mb-6">
           <label class="flex items-center space-x-3 cursor-pointer">
             <input type="checkbox" x-model="settings.enable_feature_1" class="form-checkbox h-5 w-5 text-blue-600 rounded transition duration-150 ease-in-out">
-            <span class="text-gray-700 font-medium"><?php _e('Enable Feature 1', 'custom-plugin'); ?></span>
+            <span class="text-gray-700 font-medium">Aktifkan Fitur 1</span>
           </label>
-          <p class="mt-1 text-sm text-gray-500 ml-8"><?php _e('Enable custom meta tags in head section.', 'custom-plugin'); ?></p>
+          <p class="mt-1 text-sm text-gray-500 ml-8">Aktifkan meta tag kustom di bagian head.</p>
         </div>
 
         <div class="mb-6">
           <label class="flex items-center space-x-3 cursor-pointer">
             <input type="checkbox" x-model="settings.enable_feature_2" class="form-checkbox h-5 w-5 text-blue-600 rounded transition duration-150 ease-in-out">
-            <span class="text-gray-700 font-medium"><?php _e('Enable Feature 2', 'custom-plugin'); ?></span>
+            <span class="text-gray-700 font-medium">Aktifkan Fitur 2</span>
           </label>
-          <p class="mt-1 text-sm text-gray-500 ml-8"><?php _e('Add custom message to single posts.', 'custom-plugin'); ?></p>
+          <p class="mt-1 text-sm text-gray-500 ml-8">Tambahkan pesan kustom ke postingan tunggal.</p>
         </div>
 
         <div class="mb-6" x-show="settings.enable_feature_2" x-transition>
-          <label for="custom_message" class="block text-sm font-medium text-gray-700 mb-2"><?php _e('Custom Message', 'custom-plugin'); ?></label>
-          <textarea id="custom_message" x-model="settings.custom_message" rows="4" class="shadow-sm focus:ring-blue-500 focus:border-blue-500 block w-full sm:text-sm border-gray-300 rounded-md p-2" placeholder="<?php _e('Enter your custom message here...', 'custom-plugin'); ?>"></textarea>
-          <p class="mt-1 text-sm text-gray-500"><?php _e('This message will be displayed when Feature 2 is enabled.', 'custom-plugin'); ?></p>
+          <label for="custom_message" class="block text-sm font-medium text-gray-700 mb-2">Pesan Kustom</label>
+          <textarea id="custom_message" x-model="settings.custom_message" rows="4" class="shadow-sm focus:ring-blue-500 focus:border-blue-500 block w-full sm:text-sm border-gray-300 rounded-md p-2" placeholder="Masukkan pesan kustom Anda di sini..."></textarea>
+          <p class="mt-1 text-sm text-gray-500">Pesan ini akan ditampilkan ketika Fitur 2 diaktifkan.</p>
         </div>
 
         <div class="flex items-center justify-end pt-4 border-t">
@@ -72,7 +72,7 @@ if (!defined('ABSPATH')) {
               <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
               <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
             </svg>
-            <span x-text="saving ? '<?php _e('Saving...', 'custom-plugin'); ?>' : '<?php _e('Save Settings', 'custom-plugin'); ?>'"></span>
+            <span x-text="saving ? 'Menyimpan...' : 'Simpan Pengaturan'"></span>
           </button>
         </div>
       </form>

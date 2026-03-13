@@ -35,7 +35,7 @@ class SettingsController {
         $settings = get_option('custom_plugin_settings', array(
             'enable_feature_1' => true,
             'enable_feature_2' => false,
-            'custom_message' => __('Welcome to Custom Plugin!', 'custom-plugin')
+            'custom_message' => 'Selamat datang di Custom Plugin!'
         ));
 
         // Ensure boolean types for checkboxes
@@ -58,7 +58,7 @@ class SettingsController {
 
         return rest_ensure_response(array(
             'success' => true,
-            'message' => __('Settings saved successfully!', 'custom-plugin'),
+            'message' => 'Pengaturan berhasil disimpan!',
             'settings' => $settings
         ));
     }

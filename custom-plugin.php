@@ -1,4 +1,5 @@
 <?php
+
 /**
  * Plugin Name: Custom Plugin
  * Plugin URI: https://velocitydeveloper.com/
@@ -8,8 +9,6 @@
  * Author URI: https://velocitydeveloper.com/
  * License: GPL v2 or later
  * License URI: https://www.gnu.org/licenses/gpl-2.0.html
- * Text Domain: custom-plugin
- * Domain Path: /languages
  */
 
 if (!defined('ABSPATH')) {
@@ -41,7 +40,8 @@ spl_autoload_register(function ($class) {
 });
 
 // Initialize Plugin
-function custom_plugin_init() {
+function custom_plugin_init()
+{
     return \CustomPlugin\Core\Plugin::get_instance();
 }
 custom_plugin_init();
