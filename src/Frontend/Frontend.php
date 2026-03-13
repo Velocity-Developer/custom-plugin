@@ -21,8 +21,10 @@ class Frontend
         wp_enqueue_style('custom-plugin-frontend', CUSTOM_PLUGIN_URL . 'assets/frontend/css/frontend.css', array(), CUSTOM_PLUGIN_VERSION);
         wp_enqueue_script('custom-plugin-frontend', CUSTOM_PLUGIN_URL . 'assets/frontend/js/frontend.js', array('jquery'), CUSTOM_PLUGIN_VERSION, true);
 
-        // Enqueue Alpine.js
-        wp_enqueue_script('custom-plugin-alpine', 'https://unpkg.com/alpinejs@3.13.3/dist/cdn.min.js', array(), '3.13.3', true);
+        // Enqueue Alpine.js only if not already enqueued or registered
+        if (!wp_script_is('alpinejs', 'enqueued') && !wp_script_is('alpine', 'enqueued') && !wp_script_is('custom-plugin-alpine', 'enqueued')) {
+            wp_enqueue_script('alpinejs', 'https://unpkg.com/alpinejs@3.13.3/dist/cdn.min.js', array(), '3.13.3', true);
+        }
 
         // Localize script for API
         wp_localize_script('custom-plugin-frontend', 'customPlugin', array(

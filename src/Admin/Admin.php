@@ -72,8 +72,10 @@ class Admin
     public function enqueue_scripts($hook)
     {
         if (strpos($hook, 'custom-plugin') !== false) {
-            // Enqueue Alpine.js
-            wp_enqueue_script('custom-plugin-alpine', 'https://unpkg.com/alpinejs@3.13.3/dist/cdn.min.js', array(), '3.13.3', true);
+            // Enqueue Alpine.js only if not already enqueued or registered
+            if (!wp_script_is('alpinejs', 'enqueued') && !wp_script_is('alpine', 'enqueued') && !wp_script_is('custom-plugin-alpine', 'enqueued')) {
+                wp_enqueue_script('alpinejs', 'https://unpkg.com/alpinejs@3.13.3/dist/cdn.min.js', array(), '3.13.3', true);
+            }
 
             wp_enqueue_style('custom-plugin-admin', CUSTOM_PLUGIN_URL . 'assets/admin/css/admin.css', array(), time()); // Use time() for cache busting
         }
