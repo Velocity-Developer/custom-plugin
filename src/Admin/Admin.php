@@ -2,6 +2,8 @@
 
 namespace CustomPlugin\Admin;
 
+use CustomPlugin\Core\Template;
+
 if (!defined('ABSPATH')) {
     exit;
 }
@@ -56,17 +58,17 @@ class Admin
 
     public function admin_page()
     {
-        include CUSTOM_PLUGIN_DIR . 'templates/admin/admin-page.php';
+        Template::render('admin/admin-page');
     }
 
     public function submissions_page()
     {
-        include CUSTOM_PLUGIN_DIR . 'templates/admin/submissions-page.php';
+        Template::render('admin/submissions-page');
     }
 
     public function settings_page()
     {
-        include CUSTOM_PLUGIN_DIR . 'templates/admin/settings-page.php';
+        Template::render('admin/settings-page');
     }
 
     public function enqueue_scripts($hook)

@@ -1,0 +1,17 @@
+{
+    "name": "velocity/custom-plugin",
+    "description": "Plugin kustom untuk menambahkan fitur-fitur khusus ke website WordPress Anda.",
+    "type": "wordpress-plugin",
+    "license": "GPL-2.0-or-later",
+    "authors": [
+        {
+            "name": "Velocity Developer",
+            "homepage": "https://velocitydeveloper.com/"
+        }
+    ],
+    "autoload": {
+        "psr-4": {
+            "CustomPlugin\\": "src/"
+        }
+    }
+}

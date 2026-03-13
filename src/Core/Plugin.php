@@ -36,6 +36,9 @@ class Plugin
 
   public function init()
   {
+    // Load internationalization
+    add_action('init', array($this, 'load_textdomain'));
+
     // Initialize modules
     new Admin();
     new Frontend();
@@ -64,6 +67,15 @@ class Plugin
   public function deactivate()
   {
     flush_rewrite_rules();
+  }
+
+  public function load_textdomain()
+  {
+    load_plugin_textdomain(
+      'custom-plugin',
+      false,
+      dirname(plugin_basename(CUSTOM_PLUGIN_FILE)) . '/languages/'
+    );
   }
 
   private function create_tables()

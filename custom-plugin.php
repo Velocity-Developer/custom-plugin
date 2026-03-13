@@ -21,23 +21,28 @@ define('CUSTOM_PLUGIN_FILE', __FILE__);
 define('CUSTOM_PLUGIN_DIR', plugin_dir_path(__FILE__));
 define('CUSTOM_PLUGIN_URL', plugin_dir_url(__FILE__));
 
-// SPL Autoloader
-spl_autoload_register(function ($class) {
-    $prefix = 'CustomPlugin\\';
-    $base_dir = CUSTOM_PLUGIN_DIR . 'src/';
+// Include Composer Autoloader if exists, otherwise fallback to SPL
+if (file_exists(CUSTOM_PLUGIN_DIR . 'vendor/autoload.php')) {
+    require_once CUSTOM_PLUGIN_DIR . 'vendor/autoload.php';
+} else {
+    // Fallback SPL Autoloader
+    spl_autoload_register(function ($class) {
+        $prefix = 'CustomPlugin\\';
+        $base_dir = CUSTOM_PLUGIN_DIR . 'src/';
 
-    $len = strlen($prefix);
-    if (strncmp($prefix, $class, $len) !== 0) {
-        return;
-    }
+        $len = strlen($prefix);
+        if (strncmp($prefix, $class, $len) !== 0) {
+            return;
+        }
 
-    $relative_class = substr($class, $len);
-    $file = $base_dir . str_replace('\\', '/', $relative_class) . '.php';
+        $relative_class = substr($class, $len);
+        $file = $base_dir . str_replace('\\', '/', $relative_class) . '.php';
 
-    if (file_exists($file)) {
-        require $file;
-    }
-});
+        if (file_exists($file)) {
+            require $file;
+        }
+    });
+}
 
 // Initialize Plugin
 function custom_plugin_init()
