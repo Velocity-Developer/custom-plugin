@@ -1,0 +1,18 @@
+{
+  "name": "custom-plugin",
+  "version": "1.0.0",
+  "description": "Plugin kustom untuk menambahkan fitur-fitur khusus ke website WordPress Anda.",
+  "main": "custom-plugin.php",
+  "scripts": {
+    "clean": "shx rm -rf dist custom-plugin",
+    "prebuild": "npm run clean && shx mkdir -p dist custom-plugin",
+    "copy": "shx cp -r assets src templates custom-plugin.php index.php uninstall.php README.md custom-plugin/",
+    "zip": "bestzip dist/custom-plugin-1.0.0.zip custom-plugin/",
+    "postbuild": "shx rm -rf custom-plugin",
+    "build": "npm run prebuild && npm run copy && npm run zip && npm run postbuild"
+  },
+  "devDependencies": {
+    "bestzip": "^2.2.1",
+    "shx": "^0.3.4"
+  }
+}
