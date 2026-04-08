@@ -6,6 +6,7 @@ use CustomPlugin\Admin\Admin;
 use CustomPlugin\Admin\Metaboxes;
 use CustomPlugin\Admin\AdminColumns;
 use CustomPlugin\Admin\UserFields;
+use CustomPlugin\Admin\PostAutomation;
 use CustomPlugin\Frontend\Frontend;
 use CustomPlugin\Frontend\Shortcode;
 use CustomPlugin\Api\ExampleController;
@@ -48,6 +49,7 @@ class Plugin
     new Metaboxes();
     new AdminColumns();
     new UserFields();
+    new PostAutomation();
 
     // Example modules - uncomment to use or for reference
     // new Admin();

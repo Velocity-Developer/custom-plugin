@@ -20,11 +20,14 @@ class AdminColumns
     {
         $new_columns = array();
         foreach ($columns as $key => $value) {
-            $new_columns[$key] = $value;
             if ($key === 'title') {
+                $new_columns['id_penilaian'] = 'ID Penilaian';
+                $new_columns['tanggal'] = 'Tanggal';
                 $new_columns['siswa'] = 'Siswa';
                 $new_columns['nilai'] = 'Nilai';
+                continue; // Skip the original title column
             }
+            $new_columns[$key] = $value;
         }
         return $new_columns;
     }
@@ -32,6 +35,18 @@ class AdminColumns
     public function render_penilaian_columns($column, $post_id)
     {
         switch ($column) {
+            case 'id_penilaian':
+                $edit_link = get_edit_post_link($post_id);
+                echo '<strong><a href="' . esc_url($edit_link) . '">' . esc_html(get_the_title($post_id)) . '</a></strong>';
+                break;
+            case 'tanggal':
+                $tanggal = get_post_meta($post_id, '_tanggal_penilaian', true);
+                if ($tanggal) {
+                    echo esc_html(date_i18n('d/m/Y', strtotime($tanggal)));
+                } else {
+                    echo '<span style="color: #ccc;">-</span>';
+                }
+                break;
             case 'siswa':
                 $siswa_id = get_post_meta($post_id, '_siswa_id', true);
                 if ($siswa_id) {
@@ -61,6 +76,8 @@ class AdminColumns
 
     public function set_penilaian_sortable_columns($columns)
     {
+        $columns['id_penilaian'] = 'title';
+        $columns['tanggal'] = 'tanggal';
         $columns['nilai'] = 'nilai';
         return $columns;
     }

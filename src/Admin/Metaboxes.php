@@ -34,6 +34,13 @@ class Metaboxes
         // Get current values
         $siswa_id = get_post_meta($post->ID, '_siswa_id', true);
         $nilai = get_post_meta($post->ID, '_nilai_siswa', true);
+        $tanggal = get_post_meta($post->ID, '_tanggal_penilaian', true);
+        $catatan = get_post_meta($post->ID, '_catatan_guru', true);
+
+        // Default date if empty
+        if (empty($tanggal)) {
+            $tanggal = date('Y-m-d');
+        }
 
         // Get all students (Users with role 'siswa' or 'subscriber')
         $students = get_users(array(
@@ -44,6 +51,10 @@ class Metaboxes
 
 ?>
         <div class="penilaian-metabox-content">
+            <p>
+                <label for="tanggal_penilaian"><strong>Tanggal Penilaian:</strong></label><br>
+                <input type="date" name="tanggal_penilaian" id="tanggal_penilaian" value="<?php echo esc_attr($tanggal); ?>" class="widefat" required>
+            </p>
             <p>
                 <label for="siswa_id"><strong>Pilih Siswa (User):</strong></label><br>
                 <select name="siswa_id" id="siswa_id" class="widefat" required>
@@ -62,6 +73,10 @@ class Metaboxes
             <p>
                 <label for="nilai_siswa"><strong>Nilai:</strong></label><br>
                 <input type="number" name="nilai_siswa" id="nilai_siswa" value="<?php echo esc_attr($nilai); ?>" class="widefat" step="0.01" min="0" max="100" required>
+            </p>
+            <p>
+                <label for="catatan_guru"><strong>Catatan Guru:</strong></label><br>
+                <textarea name="catatan_guru" id="catatan_guru" rows="4" class="widefat"><?php echo esc_textarea($catatan); ?></textarea>
             </p>
         </div>
 <?php
@@ -92,6 +107,16 @@ class Metaboxes
         // Save Nilai
         if (isset($_POST['nilai_siswa'])) {
             update_post_meta($post_id, '_nilai_siswa', sanitize_text_field($_POST['nilai_siswa']));
+        }
+
+        // Save Tanggal
+        if (isset($_POST['tanggal_penilaian'])) {
+            update_post_meta($post_id, '_tanggal_penilaian', sanitize_text_field($_POST['tanggal_penilaian']));
+        }
+
+        // Save Catatan
+        if (isset($_POST['catatan_guru'])) {
+            update_post_meta($post_id, '_catatan_guru', sanitize_textarea_field($_POST['catatan_guru']));
         }
     }
 }

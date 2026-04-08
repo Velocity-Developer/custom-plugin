@@ -36,7 +36,7 @@ class PostTypes
     $penilaian_args = array(
       'label'                 => 'Penilaian',
       'labels'                => $penilaian_labels,
-      'supports'              => array('title'),
+      'supports'              => array(''), // Removed title support for auto-title
       'hierarchical'          => false,
       'public'                => true,
       'show_ui'               => true,
