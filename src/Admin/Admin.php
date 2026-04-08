@@ -18,9 +18,53 @@ class Admin
 
     public function __construct()
     {
-        // Example: Uncomment to activate admin dashboard menu.
-        // add_action('admin_menu', array($this, 'add_admin_menu'));
-        // add_action('admin_enqueue_scripts', array($this, 'enqueue_scripts'));
+        // Add admin menu
+        add_action('admin_menu', array($this, 'add_admin_menu'));
+
+        // Custom Login Logo
+        add_action('login_enqueue_scripts', array($this, 'custom_login_logo'));
+        add_filter('login_headerurl', array($this, 'custom_login_logo_url'));
+        add_filter('login_headertext', array($this, 'custom_login_logo_title'));
+    }
+
+    /**
+     * Custom Login Logo based on Favicon
+     */
+    public function custom_login_logo()
+    {
+        $site_icon = get_site_icon_url(84); // 84px is standard for login logo
+
+        if ($site_icon) :
+?>
+            <style type="text/css">
+                #login h1 a,
+                .login h1 a {
+                    background-image: url(<?php echo esc_url($site_icon); ?>);
+                    height: 84px;
+                    width: 84px;
+                    background-size: contain;
+                    background-repeat: no-repeat;
+                    padding-bottom: 20px;
+                }
+            </style>
+<?php
+        endif;
+    }
+
+    /**
+     * Change Login Logo URL to site home
+     */
+    public function custom_login_logo_url()
+    {
+        return home_url();
+    }
+
+    /**
+     * Change Login Logo Title to site name
+     */
+    public function custom_login_logo_title()
+    {
+        return get_bloginfo('name');
     }
 
     /**

@@ -50,9 +50,9 @@ class Plugin
     new AdminColumns();
     new UserFields();
     new PostAutomation();
+    new Admin();
 
     // Example modules - uncomment to use or for reference
-    // new Admin();
     new Frontend();
     new Shortcode();
     // new ExampleController();
