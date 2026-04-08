@@ -25,6 +25,9 @@ class Admin
         add_action('login_enqueue_scripts', array($this, 'custom_login_logo'));
         add_filter('login_headerurl', array($this, 'custom_login_logo_url'));
         add_filter('login_headertext', array($this, 'custom_login_logo_title'));
+
+        // Login Redirect
+        add_filter('login_redirect', array($this, 'custom_login_redirect'), 10, 3);
     }
 
     /**
@@ -39,16 +42,32 @@ class Admin
             <style type="text/css">
                 #login h1 a,
                 .login h1 a {
-                    background-image: url(<?php echo esc_url($site_icon); ?>);
-                    height: 84px;
-                    width: 84px;
-                    background-size: contain;
-                    background-repeat: no-repeat;
-                    padding-bottom: 20px;
+                    background-image: url(<?php echo esc_url($site_icon); ?>) !important;
+                    height: 84px !important;
+                    width: 84px !important;
+                    background-size: contain !important;
+                    background-repeat: no-repeat !important;
+                    margin: 0 auto !important;
+                    padding-bottom: 20px !important;
                 }
             </style>
 <?php
         endif;
+    }
+
+    /**
+     * Redirect users after login
+     */
+    public function custom_login_redirect($redirect_to, $request, $user)
+    {
+        // Check if $user is a WP_User object
+        if (isset($user->roles) && is_array($user->roles)) {
+            // Check if user is 'siswa'
+            if (in_array('siswa', $user->roles) || in_array('subscriber', $user->roles)) {
+                return home_url('/nilai/');
+            }
+        }
+        return $redirect_to;
     }
 
     /**
