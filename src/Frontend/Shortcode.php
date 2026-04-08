@@ -18,35 +18,43 @@ class Shortcode
 
     public function __construct()
     {
-        // Example: To activate, uncomment the line below.
-        // add_shortcode('custom_hello', array($this, 'hello_shortcode'));
+        add_shortcode('nilai', array($this, 'nilai_shortcode'));
     }
 
     /**
-     * Shortcode: [custom_hello name="User"]
+     * Shortcode: [nilai]
      * 
      * @param array $atts
      * @return string
      */
-    public function hello_shortcode($atts)
+    public function nilai_shortcode($atts)
     {
-        // 1. Define default attributes and merge with user inputs
-        $atts = shortcode_atts(
-            array(
-                'name' => 'User',
-                'color' => 'blue'
+        // 1. Check if user is logged in
+        if (!is_user_logged_in()) {
+            return '<p>Silakan login terlebih dahulu untuk melihat nilai.</p>';
+        }
+
+        $current_user = wp_get_current_user();
+
+        // 2. Fetch penilaian data for the current user
+        $penilaian = get_posts(array(
+            'post_type'      => 'penilaian',
+            'posts_per_page' => -1,
+            'meta_query'     => array(
+                array(
+                    'key'   => '_siswa_id',
+                    'value' => $current_user->ID,
+                ),
             ),
-            $atts,
-            'custom_hello'
-        );
+            'orderby'        => 'meta_value',
+            'meta_key'       => '_tanggal_penilaian',
+            'order'          => 'DESC',
+        ));
 
-        // 2. Data to pass to template (Logic)
-        $data = array(
-            'name'  => sanitize_text_field($atts['name']),
-            'color' => sanitize_hex_color($atts['color']) ?: 'blue'
-        );
-
-        // 3. Render using Template Engine (Separation of Concerns)
-        return Template::get('frontend/hello-message', $data);
+        // 3. Render using Template Engine
+        return Template::get('frontend/daftar-nilai', array(
+            'penilaian'    => $penilaian,
+            'current_user' => $current_user,
+        ));
     }
 }
