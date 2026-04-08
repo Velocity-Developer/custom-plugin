@@ -3,6 +3,9 @@
 namespace CustomPlugin\Core;
 
 use CustomPlugin\Admin\Admin;
+use CustomPlugin\Admin\Metaboxes;
+use CustomPlugin\Admin\AdminColumns;
+use CustomPlugin\Admin\UserFields;
 use CustomPlugin\Frontend\Frontend;
 use CustomPlugin\Frontend\Shortcode;
 use CustomPlugin\Api\ExampleController;
@@ -42,6 +45,9 @@ class Plugin
     new PostTypes();
     new Taxonomies();
     new CoreFeatures();
+    new Metaboxes();
+    new AdminColumns();
+    new UserFields();
 
     // Example modules - uncomment to use or for reference
     // new Admin();
@@ -53,6 +59,12 @@ class Plugin
   public function activate()
   {
     add_option('custom_plugin_version', CUSTOM_PLUGIN_VERSION);
+
+    // Add 'Siswa' role
+    add_role('siswa', 'Siswa', array(
+      'read' => true,
+    ));
+
     flush_rewrite_rules();
   }
 
