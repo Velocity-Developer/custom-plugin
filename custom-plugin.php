@@ -54,3 +54,19 @@ custom_plugin_init();
 // Activation Hooks
 register_activation_hook(__FILE__, array(custom_plugin_init(), 'activate'));
 register_deactivation_hook(__FILE__, array(custom_plugin_init(), 'deactivate'));
+
+add_filter('gettext', 'ganti_label_login_wp_admin', 20, 3);
+function ganti_label_login_wp_admin($translated_text, $text, $domain)
+{
+
+    if (is_admin()) {
+        return $translated_text;
+    }
+
+    // Halaman login wp-admin / wp-login.php
+    if ($text === 'Username or Email Address') {
+        $translated_text = 'Nomor Induk Santri';
+    }
+
+    return $translated_text;
+}

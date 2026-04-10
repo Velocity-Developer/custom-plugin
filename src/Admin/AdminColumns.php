@@ -24,6 +24,7 @@ class AdminColumns
                 $new_columns['id_penilaian'] = 'ID Penilaian';
                 $new_columns['tanggal'] = 'Tanggal';
                 $new_columns['siswa'] = 'Siswa';
+                $new_columns['kegiatan'] = 'Kegiatan';
                 $new_columns['nilai'] = 'Nilai';
                 continue; // Skip the original title column
             }
@@ -60,6 +61,15 @@ class AdminColumns
                     }
                 } else {
                     echo '<span style="color: #ccc;">(Belum diatur)</span>';
+                }
+                break;
+
+            case 'kegiatan':
+                $deskripsi = get_post_meta($post_id, '_deskripsi_kegiatan', true);
+                if ($deskripsi) {
+                    echo esc_html($deskripsi);
+                } else {
+                    echo '<span style="color: #ccc;">-</span>';
                 }
                 break;
 

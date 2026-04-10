@@ -35,6 +35,7 @@ class Metaboxes
         $siswa_id = get_post_meta($post->ID, '_siswa_id', true);
         $nilai = get_post_meta($post->ID, '_nilai_siswa', true);
         $tanggal = get_post_meta($post->ID, '_tanggal_penilaian', true);
+        $deskripsi = get_post_meta($post->ID, '_deskripsi_kegiatan', true);
         $catatan = get_post_meta($post->ID, '_catatan_guru', true);
 
         // Default date if empty
@@ -75,6 +76,10 @@ class Metaboxes
                 <input type="number" name="nilai_siswa" id="nilai_siswa" value="<?php echo esc_attr($nilai); ?>" class="widefat" step="0.01" min="0" max="100" required>
             </p>
             <p>
+                <label for="deskripsi_kegiatan"><strong>Deskripsi Kegiatan:</strong></label><br>
+                <input type="text" name="deskripsi_kegiatan" id="deskripsi_kegiatan" value="<?php echo esc_attr($deskripsi); ?>" class="widefat">
+            </p>
+            <p>
                 <label for="catatan_guru"><strong>Catatan Guru:</strong></label><br>
                 <textarea name="catatan_guru" id="catatan_guru" rows="4" class="widefat"><?php echo esc_textarea($catatan); ?></textarea>
             </p>
@@ -107,6 +112,11 @@ class Metaboxes
         // Save Nilai
         if (isset($_POST['nilai_siswa'])) {
             update_post_meta($post_id, '_nilai_siswa', sanitize_text_field($_POST['nilai_siswa']));
+        }
+
+        // Save Deskripsi Kegiatan
+        if (isset($_POST['deskripsi_kegiatan'])) {
+            update_post_meta($post_id, '_deskripsi_kegiatan', sanitize_text_field($_POST['deskripsi_kegiatan']));
         }
 
         // Save Tanggal
