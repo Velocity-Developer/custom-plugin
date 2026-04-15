@@ -36,3 +36,5 @@ wp-config.php
 # Build directories
 dist/
 build/
+
+composer.lock

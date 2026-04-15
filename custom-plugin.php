@@ -21,27 +21,34 @@ define('CUSTOM_PLUGIN_FILE', __FILE__);
 define('CUSTOM_PLUGIN_DIR', plugin_dir_path(__FILE__));
 define('CUSTOM_PLUGIN_URL', plugin_dir_url(__FILE__));
 
-// Include Composer Autoloader if exists, otherwise fallback to SPL
+// Always register a local PSR-4 autoloader so the plugin can boot even if
+// Composer's generated autoload files are missing or outdated on the server.
+spl_autoload_register(function ($class) {
+    $prefix = 'CustomPlugin\\';
+    $base_dir = CUSTOM_PLUGIN_DIR . 'src/';
+
+    $len = strlen($prefix);
+    if (strncmp($prefix, $class, $len) !== 0) {
+        return;
+    }
+
+    $relative_class = substr($class, $len);
+    $file = $base_dir . str_replace('\\', '/', $relative_class) . '.php';
+
+    if (file_exists($file)) {
+        require_once $file;
+    }
+});
+
+// Load Composer's autoloader too when it is available.
 if (file_exists(CUSTOM_PLUGIN_DIR . 'vendor/autoload.php')) {
     require_once CUSTOM_PLUGIN_DIR . 'vendor/autoload.php';
-} else {
-    // Fallback SPL Autoloader
-    spl_autoload_register(function ($class) {
-        $prefix = 'CustomPlugin\\';
-        $base_dir = CUSTOM_PLUGIN_DIR . 'src/';
+}
 
-        $len = strlen($prefix);
-        if (strncmp($prefix, $class, $len) !== 0) {
-            return;
-        }
-
-        $relative_class = substr($class, $len);
-        $file = $base_dir . str_replace('\\', '/', $relative_class) . '.php';
-
-        if (file_exists($file)) {
-            require $file;
-        }
-    });
+// Last-resort direct include for the main plugin class in case deployment
+// contains an outdated autoload configuration.
+if (!class_exists('\CustomPlugin\Core\Plugin')) {
+    require_once CUSTOM_PLUGIN_DIR . 'src/Core/Plugin.php';
 }
 
 // Initialize Plugin
