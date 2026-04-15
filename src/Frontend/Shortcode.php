@@ -83,6 +83,19 @@ class Shortcode
                 wp_set_object_terms($post_id, intval($_POST['zone']), 'zone');
             }
 
+            // Handle Image Upload
+            if (!empty($_FILES['document_image']['name'])) {
+                require_once(ABSPATH . 'wp-admin/includes/image.php');
+                require_once(ABSPATH . 'wp-admin/includes/file.php');
+                require_once(ABSPATH . 'wp-admin/includes/media.php');
+
+                $attachment_id = media_handle_upload('document_image', $post_id);
+
+                if (!is_wp_error($attachment_id)) {
+                    set_post_thumbnail($post_id, $attachment_id);
+                }
+            }
+
             wp_redirect(add_query_arg('message', ($action === 'update' ? 'updated' : 'created'), wp_get_referer()));
             exit;
         }

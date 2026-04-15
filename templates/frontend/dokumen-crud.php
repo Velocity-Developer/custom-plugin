@@ -37,8 +37,8 @@ if (!defined('ABSPATH')) {
     <?php endif; ?>
 
     <div class="crud-form-section" style="margin-bottom: 30px; padding: 20px; border: 1px solid #ddd; border-radius: 5px;">
-        <h3><?php echo $edit_post ? 'Edit Dokumen' : 'Tambah Dokumen Baru'; ?></h3>
-        <form method="POST">
+        <h3><?php echo $edit_post ? 'Edit Data' : 'Tambah Data'; ?></h3>
+        <form method="POST" enctype="multipart/form-data">
             <?php wp_nonce_field('dokumen_action_nonce', 'dokumen_nonce'); ?>
             <input type="hidden" name="dokumen_action" value="<?php echo $edit_post ? 'update' : 'create'; ?>">
             <?php if ($edit_post): ?>
@@ -51,8 +51,31 @@ if (!defined('ABSPATH')) {
             </div>
 
             <div class="form-group" style="margin-bottom: 15px;">
+                <label style="display: block; margin-bottom: 5px;">Gambar Dokumen</label>
+                <input type="file" name="document_image" id="document_image_input" accept="image/*" style="width: 100%; padding: 8px;">
+                <div id="image_preview_container" style="margin-top: 10px;">
+                    <?php if ($edit_post && has_post_thumbnail($edit_post->ID)): ?>
+                        <?php echo get_the_post_thumbnail($edit_post->ID, 'thumbnail', array('id' => 'image_preview_img', 'style' => 'max-width: 150px; height: auto; border: 1px solid #ddd; padding: 5px;')); ?>
+                    <?php else: ?>
+                        <img id="image_preview_img" src="#" alt="Preview" style="display: none; max-width: 150px; height: auto; border: 1px solid #ddd; padding: 5px;" />
+                    <?php endif; ?>
+                </div>
+            </div>
+
+            <div class="form-group" style="margin-bottom: 15px;">
                 <label style="display: block; margin-bottom: 5px;">Konten/Deskripsi</label>
-                <textarea name="post_content" style="width: 100%; padding: 8px;" rows="5"><?php echo $edit_post ? esc_textarea($edit_post->post_content) : ''; ?></textarea>
+                <?php
+                $content = $edit_post ? $edit_post->post_content : '';
+                $editor_id = 'post_content_editor';
+                $settings = array(
+                    'textarea_name' => 'post_content',
+                    'media_buttons' => false,
+                    'textarea_rows' => 10,
+                    'teeny'         => true,
+                    'quicktags'     => true
+                );
+                wp_editor($content, $editor_id, $settings);
+                ?>
             </div>
 
             <div class="form-group" style="margin-bottom: 15px;">
@@ -99,6 +122,7 @@ if (!defined('ABSPATH')) {
         <table style="width: 100%; border-collapse: collapse;">
             <thead>
                 <tr style="background: #f4f4f4;">
+                    <th style="padding: 10px; border: 1px solid #ddd; text-align: left; width: 80px;">Gambar</th>
                     <th style="padding: 10px; border: 1px solid #ddd; text-align: left;">Judul</th>
                     <th style="padding: 10px; border: 1px solid #ddd; text-align: left;">Kategori</th>
                     <th style="padding: 10px; border: 1px solid #ddd; text-align: left;">Zone</th>
@@ -108,6 +132,13 @@ if (!defined('ABSPATH')) {
             <tbody>
                 <?php if ($query->have_posts()): while ($query->have_posts()): $query->the_post(); ?>
                         <tr>
+                            <td style="padding: 10px; border: 1px solid #ddd; text-align: center;">
+                                <?php if (has_post_thumbnail()): ?>
+                                    <?php the_post_thumbnail(array(50, 50), array('style' => 'max-width: 50px; height: auto;')); ?>
+                                <?php else: ?>
+                                    <span style="font-size: 10px; color: #999;">No Image</span>
+                                <?php endif; ?>
+                            </td>
                             <td style="padding: 10px; border: 1px solid #ddd;"><?php the_title(); ?></td>
                             <td style="padding: 10px; border: 1px solid #ddd;">
                                 <?php echo get_the_term_list(get_the_ID(), 'document_category', '', ', '); ?>
@@ -136,3 +167,24 @@ if (!defined('ABSPATH')) {
         </table>
     </div>
 </div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const input = document.getElementById('document_image_input');
+        const preview = document.getElementById('image_preview_img');
+
+        if (input && preview) {
+            input.addEventListener('change', function() {
+                const file = this.files[0];
+                if (file) {
+                    const reader = new FileReader();
+                    reader.onload = function(e) {
+                        preview.src = e.target.result;
+                        preview.style.display = 'block';
+                    }
+                    reader.readAsDataURL(file);
+                }
+            });
+        }
+    });
+</script>
