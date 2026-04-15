@@ -28,6 +28,7 @@ class PostTypes
   public function register_post_types()
   {
     $this->register_document_category_taxonomy();
+    $this->register_zone_taxonomy();
     $this->register_document_post_type();
     $this->register_default_document_categories();
   }
@@ -69,7 +70,7 @@ class PostTypes
       'description'         => 'Dokumen operasional dan kemitraan',
       'labels'              => $labels,
       'supports'            => array('title', 'editor', 'excerpt', 'thumbnail'),
-      'taxonomies'          => array('document_category'),
+      'taxonomies'          => array('document_category', 'zone'),
       'hierarchical'        => false,
       'public'              => true,
       'show_ui'             => true,
@@ -117,6 +118,35 @@ class PostTypes
     );
 
     register_taxonomy('document_category', array('dokumen'), $args);
+  }
+
+  private function register_zone_taxonomy()
+  {
+    $labels = array(
+      'name'              => 'Zone',
+      'singular_name'     => 'Zone',
+      'search_items'      => 'Cari Zone',
+      'all_items'         => 'Semua Zone',
+      'parent_item'       => 'Induk Zone',
+      'parent_item_colon' => 'Induk Zone:',
+      'edit_item'         => 'Edit Zone',
+      'update_item'       => 'Perbarui Zone',
+      'add_new_item'      => 'Tambah Zone Baru',
+      'new_item_name'     => 'Nama Zone Baru',
+      'menu_name'         => 'Zone',
+    );
+
+    $args = array(
+      'hierarchical'      => true,
+      'labels'            => $labels,
+      'show_ui'           => true,
+      'show_admin_column' => true,
+      'query_var'         => true,
+      'rewrite'           => array('slug' => 'zone'),
+      'show_in_rest'      => true,
+    );
+
+    register_taxonomy('zone', array('dokumen'), $args);
   }
 
   private function register_default_document_categories()

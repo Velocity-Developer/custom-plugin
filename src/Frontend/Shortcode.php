@@ -20,33 +20,121 @@ class Shortcode
     {
         // Example: To activate, uncomment the line below.
         // add_shortcode('custom_hello', array($this, 'hello_shortcode'));
+        add_shortcode('dokumen_crud', array($this, 'dokumen_crud_shortcode'));
+
+        // Handle form submissions
+        add_action('init', array($this, 'handle_post_requests'));
     }
 
     /**
-     * Shortcode: [custom_hello name="User"]
-     * 
-     * @param array $atts
-     * @return string
+     * Handle CRUD POST requests from the frontend
      */
-    public function hello_shortcode($atts)
+    public function handle_post_requests()
     {
-        // 1. Define default attributes and merge with user inputs
-        $atts = shortcode_atts(
-            array(
-                'name' => 'User',
-                'color' => 'blue'
-            ),
-            $atts,
-            'custom_hello'
+        if (!isset($_POST['dokumen_action']) || !wp_verify_nonce($_POST['dokumen_nonce'], 'dokumen_action_nonce')) {
+            return;
+        }
+
+        if (!current_user_can('edit_posts')) {
+            wp_die(__('Maaf, Anda tidak memiliki izin untuk melakukan aksi ini.', 'custom-plugin'));
+        }
+
+        $action = sanitize_text_field($_POST['dokumen_action']);
+
+        switch ($action) {
+            case 'create':
+            case 'update':
+                $this->save_document($action);
+                break;
+            case 'delete':
+                $this->delete_document();
+                break;
+        }
+    }
+
+    /**
+     * Save (Create or Update) a document
+     */
+    private function save_document($action)
+    {
+        $post_id = ($action === 'update') ? intval($_POST['post_id']) : 0;
+
+        $post_data = array(
+            'post_title'   => sanitize_text_field($_POST['post_title']),
+            'post_content' => wp_kses_post($_POST['post_content']),
+            'post_status'  => 'publish',
+            'post_type'    => 'dokumen',
         );
 
-        // 2. Data to pass to template (Logic)
+        if ($action === 'update') {
+            $post_data['ID'] = $post_id;
+            $result = wp_update_post($post_data);
+        } else {
+            $result = wp_insert_post($post_data);
+            $post_id = $result;
+        }
+
+        if ($result && !is_wp_error($result)) {
+            // Update taxonomies
+            if (isset($_POST['document_category'])) {
+                wp_set_object_terms($post_id, intval($_POST['document_category']), 'document_category');
+            }
+            if (isset($_POST['zone'])) {
+                wp_set_object_terms($post_id, intval($_POST['zone']), 'zone');
+            }
+
+            wp_redirect(add_query_arg('message', ($action === 'update' ? 'updated' : 'created'), wp_get_referer()));
+            exit;
+        }
+    }
+
+    /**
+     * Delete a document
+     */
+    private function delete_document()
+    {
+        $post_id = intval($_POST['post_id']);
+        if ($post_id > 0) {
+            wp_delete_post($post_id, true);
+            wp_redirect(add_query_arg('message', 'deleted', wp_get_referer()));
+            exit;
+        }
+    }
+
+    /**
+     * Shortcode: [dokumen_crud]
+     */
+    public function dokumen_crud_shortcode($atts)
+    {
+        $paged = (get_query_var('paged')) ? get_query_var('paged') : 1;
+
+        $args = array(
+            'post_type'      => 'dokumen',
+            'posts_per_page' => 10,
+            'paged'          => $paged,
+            'post_status'    => 'publish',
+        );
+
+        $query = new \WP_Query($args);
+
+        // Get taxonomies for form
+        $categories = get_terms(array('taxonomy' => 'document_category', 'hide_empty' => false));
+        $zones      = get_terms(array('taxonomy' => 'zone', 'hide_empty' => false));
+
+        // Check if editing
+        $edit_post = null;
+        if (isset($_GET['action']) && $_GET['action'] === 'edit' && isset($_GET['post_id'])) {
+            $edit_post = get_post(intval($_GET['post_id']));
+        }
+
         $data = array(
-            'name'  => sanitize_text_field($atts['name']),
-            'color' => sanitize_hex_color($atts['color']) ?: 'blue'
+            'query'      => $query,
+            'categories' => $categories,
+            'zones'      => $zones,
+            'edit_post'  => $edit_post,
+            'message'    => isset($_GET['message']) ? sanitize_text_field($_GET['message']) : '',
         );
 
-        // 3. Render using Template Engine (Separation of Concerns)
-        return Template::get('frontend/hello-message', $data);
+        return \CustomPlugin\Core\Template::get('frontend/dokumen-crud', $data);
     }
 }
