@@ -41,13 +41,19 @@ if (!defined('ABSPATH')) {
 
         <div class="form-group" style="margin-bottom: 20px;">
             <label style="display: block; margin-bottom: 5px; font-weight: 600;">Verifikasi Keamanan (Captcha)</label>
-            <div style="display: flex; align-items: center; gap: 15px;">
-                <div id="captcha_image" style="background: #000; color: #fff; padding: 10px 15px; border-radius: 4px; font-family: 'Courier New', Courier, monospace; font-weight: bold; font-size: 20px; letter-spacing: 5px; user-select: none; pointer-events: none; background-image: radial-gradient(circle at 50% 50%, #333 1px, transparent 1px); background-size: 5px 5px;">
-                    <?php echo $captcha_text; ?>
+            <?php if (!empty($captcha_html)): ?>
+                <div class="velocity-addons-captcha-container">
+                    <?php echo $captcha_html; ?>
                 </div>
-                <input type="text" name="captcha" id="captcha" class="input" required placeholder="Ketik kode di samping" style="flex: 1; padding: 10px; border: 1px solid #ccc; border-radius: 4px;">
-            </div>
-            <small style="color: #777;">*Captcha bersifat case-sensitive.</small>
+            <?php else: ?>
+                <div style="display: flex; align-items: center; gap: 15px;">
+                    <div id="captcha_image" style="background: #000; color: #fff; padding: 10px 15px; border-radius: 4px; font-family: 'Courier New', Courier, monospace; font-weight: bold; font-size: 20px; letter-spacing: 5px; user-select: none; pointer-events: none; background-image: radial-gradient(circle at 50% 50%, #333 1px, transparent 1px); background-size: 5px 5px;">
+                        <?php echo $captcha_text; ?>
+                    </div>
+                    <input type="text" name="captcha" id="captcha" class="input" required placeholder="Ketik kode di samping" style="flex: 1; padding: 10px; border: 1px solid #ccc; border-radius: 4px;">
+                </div>
+                <small style="color: #777;">*Captcha bersifat case-sensitive.</small>
+            <?php endif; ?>
         </div>
 
         <div class="form-group" style="margin-bottom: 20px;">

@@ -37,15 +37,26 @@ class Shortcode
      */
     public function handle_post_requests()
     {
-        if (!isset($_POST['dokumen_action']) || !wp_verify_nonce($_POST['dokumen_nonce'], 'dokumen_action_nonce')) {
+        if (!isset($_POST['dokumen_action'])) {
+            return;
+        }
+
+        $action = sanitize_text_field($_POST['dokumen_action']);
+
+        // Handle Login separately (no edit_posts permission required)
+        if ($action === 'login') {
+            $this->handle_login();
+            return;
+        }
+
+        // For other CRUD actions, check nonce and permissions
+        if (!isset($_POST['dokumen_nonce']) || !wp_verify_nonce($_POST['dokumen_nonce'], 'dokumen_action_nonce')) {
             return;
         }
 
         if (!current_user_can('edit_posts')) {
             wp_die(__('Maaf, Anda tidak memiliki izin untuk melakukan aksi ini.', 'custom-plugin'));
         }
-
-        $action = sanitize_text_field($_POST['dokumen_action']);
 
         switch ($action) {
             case 'create':
@@ -54,9 +65,6 @@ class Shortcode
                 break;
             case 'delete':
                 $this->delete_document();
-                break;
-            case 'login':
-                $this->handle_login();
                 break;
         }
     }
@@ -70,13 +78,16 @@ class Shortcode
             return;
         }
 
-        // Verify Captcha
-        $user_captcha = isset($_POST['captcha']) ? sanitize_text_field($_POST['captcha']) : '';
-        $stored_captcha = isset($_COOKIE['custom_captcha']) ? $_COOKIE['custom_captcha'] : '';
+        // Only check manually if Velocity Addons is NOT active.
+        // If it IS active, it will be checked automatically inside wp_signon() via its own filters.
+        if (!class_exists('Velocity_Addons_Captcha')) {
+            $user_captcha = isset($_POST['captcha']) ? sanitize_text_field($_POST['captcha']) : '';
+            $stored_captcha = isset($_COOKIE['custom_captcha']) ? $_COOKIE['custom_captcha'] : '';
 
-        if (empty($user_captcha) || $user_captcha !== $stored_captcha) {
-            wp_redirect(add_query_arg('login_error', 'captcha', wp_get_referer()));
-            exit;
+            if (empty($user_captcha) || strtoupper($user_captcha) !== strtoupper($stored_captcha)) {
+                wp_redirect(add_query_arg('login_error', 'captcha', wp_get_referer()));
+                exit;
+            }
         }
 
         $creds = array(
@@ -88,7 +99,13 @@ class Shortcode
         $user = wp_signon($creds, is_ssl());
 
         if (is_wp_error($user)) {
-            wp_redirect(add_query_arg('login_error', 'failed', wp_get_referer()));
+            $error_code = $user->get_error_code();
+            // Catch captcha error from Velocity Addons or other plugins
+            if ($error_code === 'Captcha Invalid' || $error_code === 'recaptcha_error') {
+                wp_redirect(add_query_arg('login_error', 'captcha', wp_get_referer()));
+            } else {
+                wp_redirect(add_query_arg('login_error', 'failed', wp_get_referer()));
+            }
             exit;
         }
 
@@ -210,6 +227,18 @@ class Shortcode
             'limit'    => 10,
         ), $atts);
 
+        // Detect context if attributes are empty
+        if (empty($atts['zone']) && empty($atts['kategori'])) {
+            $queried_object = get_queried_object();
+            if ($queried_object instanceof \WP_Term) {
+                if ($queried_object->taxonomy === 'zone') {
+                    $atts['zone'] = $queried_object->slug;
+                } elseif ($queried_object->taxonomy === 'document_category') {
+                    $atts['kategori'] = $queried_object->slug;
+                }
+            }
+        }
+
         $args = array(
             'post_type'      => 'dokumen',
             'post_status'    => 'publish',
@@ -262,11 +291,22 @@ class Shortcode
             return '<div class="alert alert-info">Anda sudah login. <a href="' . wp_logout_url(get_permalink()) . '">Logout</a></div>';
         }
 
-        // Generate captcha
-        $captcha_str = substr(str_shuffle("ABCDEFGHJKLMNPQRSTUVWXYZ23456789"), 0, 5);
-        setcookie('custom_captcha', $captcha_str, time() + 300, '/');
+        $captcha_html = '';
+        $captcha_str = '';
+
+        if (class_exists('Velocity_Addons_Captcha')) {
+            $velocity_captcha = new \Velocity_Addons_Captcha();
+            ob_start();
+            $velocity_captcha->display();
+            $captcha_html = ob_get_clean();
+        } else {
+            // Generate simple captcha if Velocity Addons is not active
+            $captcha_str = substr(str_shuffle("ABCDEFGHJKLMNPQRSTUVWXYZ23456789"), 0, 5);
+            setcookie('custom_captcha', $captcha_str, time() + 300, '/');
+        }
 
         $data = array(
+            'captcha_html' => $captcha_html,
             'captcha_text' => $captcha_str,
             'error'        => isset($_GET['login_error']) ? $_GET['login_error'] : '',
         );
