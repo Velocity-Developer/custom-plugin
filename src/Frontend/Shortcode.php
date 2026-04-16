@@ -24,6 +24,9 @@ class Shortcode
 
         // Handle form submissions
         add_action('init', array($this, 'handle_post_requests'));
+
+        // Shortcode: [daftar_dokumen zone="" kategori="" limit="10"]
+        add_shortcode('daftar_dokumen', array($this, 'daftar_dokumen_shortcode'));
     }
 
     /**
@@ -149,5 +152,62 @@ class Shortcode
         );
 
         return \CustomPlugin\Core\Template::get('frontend/dokumen-crud', $data);
+    }
+
+    /**
+     * Shortcode: [daftar_dokumen]
+     * Menampilkan daftar dokumen dalam tabel dengan pagination
+     */
+    public function daftar_dokumen_shortcode($atts)
+    {
+        $paged = (get_query_var('paged')) ? get_query_var('paged') : 1;
+
+        $atts = shortcode_atts(array(
+            'zone'     => '',
+            'kategori' => '',
+            'limit'    => 10,
+        ), $atts);
+
+        $args = array(
+            'post_type'      => 'dokumen',
+            'post_status'    => 'publish',
+            'posts_per_page' => intval($atts['limit']),
+            'paged'          => $paged,
+        );
+
+        $tax_query = array();
+
+        if (!empty($atts['zone'])) {
+            $tax_query[] = array(
+                'taxonomy' => 'zone',
+                'field'    => 'slug',
+                'terms'    => sanitize_text_field($atts['zone']),
+            );
+        }
+
+        if (!empty($atts['kategori'])) {
+            $tax_query[] = array(
+                'taxonomy' => 'document_category',
+                'field'    => 'slug',
+                'terms'    => sanitize_text_field($atts['kategori']),
+            );
+        }
+
+        if (count($tax_query) > 1) {
+            $tax_query['relation'] = 'AND';
+        }
+
+        if (!empty($tax_query)) {
+            $args['tax_query'] = $tax_query;
+        }
+
+        $query = new \WP_Query($args);
+
+        $data = array(
+            'query' => $query,
+            'paged' => $paged,
+        );
+
+        return \CustomPlugin\Core\Template::get('frontend/daftar-dokumen', $data);
     }
 }

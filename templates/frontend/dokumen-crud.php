@@ -147,12 +147,12 @@ if (!defined('ABSPATH')) {
                                 <?php echo get_the_term_list(get_the_ID(), 'zone', '', ', '); ?>
                             </td>
                             <td style="padding: 10px; border: 1px solid #ddd; text-align: center;">
-                                <a href="<?php echo add_query_arg(array('action' => 'edit', 'post_id' => get_the_ID())); ?>">Edit</a> |
+                                <a href="<?php echo add_query_arg(array('action' => 'edit', 'post_id' => get_the_ID())); ?>" style="display: inline-block; padding: 5px 10px; background: #ffc107; color: #000; text-decoration: none; border-radius: 4px; font-size: 12px; margin-right: 5px;">Edit</a>
                                 <form method="POST" style="display: inline;" onsubmit="return confirm('Yakin ingin menghapus dokumen ini?');">
                                     <?php wp_nonce_field('dokumen_action_nonce', 'dokumen_nonce'); ?>
                                     <input type="hidden" name="dokumen_action" value="delete">
                                     <input type="hidden" name="post_id" value="<?php the_ID(); ?>">
-                                    <button type="submit" style="background: none; border: none; color: #a00; cursor: pointer; padding: 0; font-family: inherit; font-size: inherit;">Hapus</button>
+                                    <button type="submit" style="display: inline-block; padding: 5px 10px; background: #dc3545; color: #fff; border: none; border-radius: 4px; font-size: 12px; cursor: pointer;">Hapus</button>
                                 </form>
                             </td>
                         </tr>
