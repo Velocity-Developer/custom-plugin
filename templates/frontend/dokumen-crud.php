@@ -84,6 +84,12 @@ if (!defined('ABSPATH')) {
                     <option value="">Pilih Kategori</option>
                     <?php
                     $current_cat = $edit_post ? wp_get_object_terms($edit_post->ID, 'document_category', array('fields' => 'ids')) : array();
+
+                    // Default from URL if not editing
+                    if (!$edit_post && isset($_GET['cat_id'])) {
+                        $current_cat = array(intval($_GET['cat_id']));
+                    }
+
                     foreach ($categories as $cat):
                     ?>
                         <option value="<?php echo $cat->term_id; ?>" <?php echo in_array($cat->term_id, $current_cat) ? 'selected' : ''; ?>>
@@ -99,6 +105,12 @@ if (!defined('ABSPATH')) {
                     <option value="">Pilih Zone</option>
                     <?php
                     $current_zone = $edit_post ? wp_get_object_terms($edit_post->ID, 'zone', array('fields' => 'ids')) : array();
+
+                    // Default from URL if not editing
+                    if (!$edit_post && isset($_GET['zone_id'])) {
+                        $current_zone = array(intval($_GET['zone_id']));
+                    }
+
                     foreach ($zones as $zone):
                     ?>
                         <option value="<?php echo $zone->term_id; ?>" <?php echo in_array($zone->term_id, $current_zone) ? 'selected' : ''; ?>>

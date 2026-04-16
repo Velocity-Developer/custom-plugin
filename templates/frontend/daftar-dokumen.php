@@ -15,7 +15,16 @@ if (!defined('ABSPATH')) {
 <div class="custom-plugin-archive-container">
     <?php if (current_user_can('edit_posts')): ?>
         <div style="margin-bottom: 20px; text-align: right;">
-            <a href="https://pam-phe.com/data" class="btn-tambah" style="display: inline-block; padding: 10px 20px; background: #28a745; color: #fff; text-decoration: none; border-radius: 4px; font-weight: bold;">
+            <?php
+            $tambah_url = home_url('/data');
+            $current_queried_object = get_queried_object();
+
+            if ($current_queried_object instanceof WP_Term) {
+                $param_name = ($current_queried_object->taxonomy === 'zone') ? 'zone_id' : 'cat_id';
+                $tambah_url = add_query_arg($param_name, $current_queried_object->term_id, $tambah_url);
+            }
+            ?>
+            <a href="<?php echo esc_url($tambah_url); ?>" class="btn-tambah" style="display: inline-block; padding: 10px 20px; background: #28a745; color: #fff; text-decoration: none; border-radius: 4px; font-weight: bold;">
                 + Tambah Dokumen
             </a>
         </div>
@@ -64,7 +73,7 @@ if (!defined('ABSPATH')) {
                                     Lihat Detail
                                 </a>
                                 <?php if (current_user_can('edit_posts')): ?>
-                                    <a href="https://pam-phe.com/data?action=edit&post_id=<?php the_ID(); ?>" class="btn-edit" style="display: inline-block; padding: 6px 12px; background: #ffc107; color: #000; text-decoration: none; border-radius: 4px; font-size: 12px; width: 100%;">
+                                    <a href="<?php echo esc_url(add_query_arg(array('action' => 'edit', 'post_id' => get_the_ID()), home_url('/data'))); ?>" class="btn-edit" style="display: inline-block; padding: 6px 12px; background: #ffc107; color: #000; text-decoration: none; border-radius: 4px; font-size: 12px; width: 100%;">
                                         Edit Dokumen
                                     </a>
                                 <?php endif; ?>
