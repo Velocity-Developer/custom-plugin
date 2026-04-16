@@ -4,7 +4,7 @@ if (!defined('ABSPATH')) {
 }
 
 /**
- * Template for Document CRUD Frontend
+ * Template for Document & History CRUD Frontend
  * 
  * Available variables:
  * @var WP_Query $query
@@ -12,6 +12,7 @@ if (!defined('ABSPATH')) {
  * @var array $zones
  * @var WP_Post|null $edit_post
  * @var string $message
+ * @var string $post_type
  */
 ?>
 
@@ -20,15 +21,16 @@ if (!defined('ABSPATH')) {
         <div class="notice notice-success">
             <p>
                 <?php
+                $label = $post_type === 'history' ? 'History' : 'Dokumen';
                 switch ($message) {
                     case 'created':
-                        echo 'Dokumen berhasil dibuat.';
+                        echo $label . ' berhasil dibuat.';
                         break;
                     case 'updated':
-                        echo 'Dokumen berhasil diperbarui.';
+                        echo $label . ' berhasil diperbarui.';
                         break;
                     case 'deleted':
-                        echo 'Dokumen berhasil dihapus.';
+                        echo $label . ' berhasil dihapus.';
                         break;
                 }
                 ?>
@@ -41,17 +43,18 @@ if (!defined('ABSPATH')) {
         <form method="POST" enctype="multipart/form-data">
             <?php wp_nonce_field('dokumen_action_nonce', 'dokumen_nonce'); ?>
             <input type="hidden" name="dokumen_action" value="<?php echo $edit_post ? 'update' : 'create'; ?>">
+            <input type="hidden" name="post_type" value="<?php echo esc_attr($post_type); ?>">
             <?php if ($edit_post): ?>
                 <input type="hidden" name="post_id" value="<?php echo $edit_post->ID; ?>">
             <?php endif; ?>
 
             <div class="form-group" style="margin-bottom: 15px;">
-                <label style="display: block; margin-bottom: 5px;">Judul Dokumen</label>
+                <label style="display: block; margin-bottom: 5px;">Judul <?php echo $post_type === 'history' ? 'History' : 'Dokumen'; ?></label>
                 <input type="text" name="post_title" required value="<?php echo $edit_post ? esc_attr($edit_post->post_title) : ''; ?>" style="width: 100%; padding: 8px;">
             </div>
 
             <div class="form-group" style="margin-bottom: 15px;">
-                <label style="display: block; margin-bottom: 5px;">Gambar Dokumen</label>
+                <label style="display: block; margin-bottom: 5px;">Gambar <?php echo $post_type === 'history' ? 'History' : 'Dokumen'; ?></label>
                 <input type="file" name="document_image" id="document_image_input" accept="image/*" style="width: 100%; padding: 8px;">
                 <div id="image_preview_container" style="margin-top: 10px;">
                     <?php if ($edit_post && has_post_thumbnail($edit_post->ID)): ?>
@@ -79,7 +82,7 @@ if (!defined('ABSPATH')) {
             </div>
 
             <div class="form-group" style="margin-bottom: 15px;">
-                <label style="display: block; margin-bottom: 5px;">Kategori Dokumen</label>
+                <label style="display: block; margin-bottom: 5px;">Kategori <?php echo $post_type === 'history' ? 'History' : 'Dokumen'; ?></label>
                 <select name="document_category" style="width: 100%; padding: 8px;">
                     <option value="">Pilih Kategori</option>
                     <?php
@@ -121,7 +124,7 @@ if (!defined('ABSPATH')) {
             </div>
 
             <button type="submit" class="button" style="padding: 10px 20px; background: #0073aa; color: white; border: none; cursor: pointer;">
-                <?php echo $edit_post ? 'Perbarui Dokumen' : 'Simpan Dokumen'; ?>
+                <?php echo $edit_post ? 'Perbarui ' . ($post_type === 'history' ? 'History' : 'Dokumen') : 'Simpan ' . ($post_type === 'history' ? 'History' : 'Dokumen'); ?>
             </button>
             <?php if ($edit_post): ?>
                 <a href="<?php echo remove_query_arg(array('action', 'post_id')); ?>" style="margin-left: 10px;">Batal</a>
@@ -130,7 +133,7 @@ if (!defined('ABSPATH')) {
     </div>
 
     <div class="crud-list-section">
-        <h3>Daftar Dokumen</h3>
+        <h3>Daftar <?php echo $post_type === 'history' ? 'History' : 'Dokumen'; ?></h3>
         <table style="width: 100%; border-collapse: collapse;">
             <thead>
                 <tr style="background: #f4f4f4;">
@@ -160,10 +163,11 @@ if (!defined('ABSPATH')) {
                             </td>
                             <td style="padding: 10px; border: 1px solid #ddd; text-align: center;">
                                 <a href="<?php echo add_query_arg(array('action' => 'edit', 'post_id' => get_the_ID())); ?>" style="display: inline-block; padding: 5px 10px; background: #ffc107; color: #000; text-decoration: none; border-radius: 4px; font-size: 12px; margin-right: 5px;">Edit</a>
-                                <form method="POST" style="display: inline;" onsubmit="return confirm('Yakin ingin menghapus dokumen ini?');">
+                                <form method="POST" style="display: inline;" onsubmit="return confirm('Yakin ingin menghapus <?php echo $post_type === 'history' ? 'history' : 'dokumen'; ?> ini?');">
                                     <?php wp_nonce_field('dokumen_action_nonce', 'dokumen_nonce'); ?>
                                     <input type="hidden" name="dokumen_action" value="delete">
                                     <input type="hidden" name="post_id" value="<?php the_ID(); ?>">
+                                    <input type="hidden" name="post_type" value="<?php echo esc_attr($post_type); ?>">
                                     <button type="submit" style="display: inline-block; padding: 5px 10px; background: #dc3545; color: #fff; border: none; border-radius: 4px; font-size: 12px; cursor: pointer;">Hapus</button>
                                 </form>
                             </td>
@@ -172,7 +176,7 @@ if (!defined('ABSPATH')) {
                     wp_reset_postdata();
                 else: ?>
                     <tr>
-                        <td colspan="4" style="padding: 10px; border: 1px solid #ddd; text-align: center;">Belum ada dokumen.</td>
+                        <td colspan="5" style="padding: 10px; border: 1px solid #ddd; text-align: center;">Belum ada <?php echo $post_type === 'history' ? 'history' : 'dokumen'; ?>.</td>
                     </tr>
                 <?php endif; ?>
             </tbody>

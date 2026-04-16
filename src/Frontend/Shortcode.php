@@ -21,12 +21,15 @@ class Shortcode
         // Example: To activate, uncomment the line below.
         // add_shortcode('custom_hello', array($this, 'hello_shortcode'));
         add_shortcode('dokumen_crud', array($this, 'dokumen_crud_shortcode'));
+        add_shortcode('history_crud', array($this, 'history_crud_shortcode'));
 
         // Handle form submissions
         add_action('init', array($this, 'handle_post_requests'));
 
         // Shortcode: [daftar_dokumen zone="" kategori="" limit="10"]
         add_shortcode('daftar_dokumen', array($this, 'daftar_dokumen_shortcode'));
+        // Shortcode: [daftar_history zone="" kategori="" limit="10"]
+        add_shortcode('daftar_history', array($this, 'daftar_history_shortcode'));
 
         // Shortcode: [custom_login]
         add_shortcode('custom_login', array($this, 'custom_login_shortcode'));
@@ -58,13 +61,15 @@ class Shortcode
             wp_die(__('Maaf, Anda tidak memiliki izin untuk melakukan aksi ini.', 'custom-plugin'));
         }
 
+        $post_type = isset($_POST['post_type']) ? sanitize_text_field($_POST['post_type']) : 'dokumen';
+
         switch ($action) {
             case 'create':
             case 'update':
-                $this->save_document($action);
+                $this->save_document($action, $post_type);
                 break;
             case 'delete':
-                $this->delete_document();
+                $this->delete_document($post_type);
                 break;
         }
     }
@@ -115,9 +120,9 @@ class Shortcode
     }
 
     /**
-     * Save (Create or Update) a document
+     * Save (Create or Update) a document or history
      */
-    private function save_document($action)
+    private function save_document($action, $post_type = 'dokumen')
     {
         $post_id = ($action === 'update') ? intval($_POST['post_id']) : 0;
 
@@ -125,7 +130,7 @@ class Shortcode
             'post_title'   => sanitize_text_field($_POST['post_title']),
             'post_content' => wp_kses_post($_POST['post_content']),
             'post_status'  => 'publish',
-            'post_type'    => 'dokumen',
+            'post_type'    => $post_type,
         );
 
         if ($action === 'update') {
@@ -164,9 +169,9 @@ class Shortcode
     }
 
     /**
-     * Delete a document
+     * Delete a document or history
      */
-    private function delete_document()
+    private function delete_document($post_type = 'dokumen')
     {
         $post_id = intval($_POST['post_id']);
         if ($post_id > 0) {
@@ -181,10 +186,26 @@ class Shortcode
      */
     public function dokumen_crud_shortcode($atts)
     {
+        return $this->generic_crud_shortcode('dokumen', $atts);
+    }
+
+    /**
+     * Shortcode: [history_crud]
+     */
+    public function history_crud_shortcode($atts)
+    {
+        return $this->generic_crud_shortcode('history', $atts);
+    }
+
+    /**
+     * Generic CRUD shortcode for both dokumen and history
+     */
+    private function generic_crud_shortcode($post_type, $atts)
+    {
         $paged = (get_query_var('paged')) ? get_query_var('paged') : 1;
 
         $args = array(
-            'post_type'      => 'dokumen',
+            'post_type'      => $post_type,
             'posts_per_page' => 10,
             'paged'          => $paged,
             'post_status'    => 'publish',
@@ -208,6 +229,7 @@ class Shortcode
             'zones'      => $zones,
             'edit_post'  => $edit_post,
             'message'    => isset($_GET['message']) ? sanitize_text_field($_GET['message']) : '',
+            'post_type'  => $post_type,
         );
 
         return \CustomPlugin\Core\Template::get('frontend/dokumen-crud', $data);
@@ -218,6 +240,23 @@ class Shortcode
      * Menampilkan daftar dokumen dalam tabel dengan pagination
      */
     public function daftar_dokumen_shortcode($atts)
+    {
+        return $this->generic_daftar_shortcode('dokumen', $atts);
+    }
+
+    /**
+     * Shortcode: [daftar_history]
+     * Menampilkan daftar history dalam tabel dengan pagination
+     */
+    public function daftar_history_shortcode($atts)
+    {
+        return $this->generic_daftar_shortcode('history', $atts);
+    }
+
+    /**
+     * Generic daftar shortcode for both dokumen and history
+     */
+    private function generic_daftar_shortcode($post_type, $atts)
     {
         $paged = (get_query_var('paged')) ? get_query_var('paged') : 1;
 
@@ -240,7 +279,7 @@ class Shortcode
         }
 
         $args = array(
-            'post_type'      => 'dokumen',
+            'post_type'      => $post_type,
             'post_status'    => 'publish',
             'posts_per_page' => intval($atts['limit']),
             'paged'          => $paged,
@@ -277,6 +316,7 @@ class Shortcode
         $data = array(
             'query' => $query,
             'paged' => $paged,
+            'post_type' => $post_type,
         );
 
         return \CustomPlugin\Core\Template::get('frontend/daftar-dokumen', $data);

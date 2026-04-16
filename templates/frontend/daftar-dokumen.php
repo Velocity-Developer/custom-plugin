@@ -4,11 +4,12 @@ if (!defined('ABSPATH')) {
 }
 
 /**
- * Template for Archive Document List
+ * Template for Archive Document & History List
  * 
  * Available variables:
  * @var WP_Query $query
  * @var int $paged
+ * @var string $post_type
  */
 ?>
 
@@ -16,6 +17,7 @@ if (!defined('ABSPATH')) {
     <?php if (current_user_can('edit_posts')): ?>
         <div style="margin-bottom: 20px; text-align: right;">
             <?php
+            $label = $post_type === 'history' ? 'History' : 'Dokumen';
             $tambah_url = home_url('/data');
             $current_queried_object = get_queried_object();
 
@@ -25,7 +27,7 @@ if (!defined('ABSPATH')) {
             }
             ?>
             <a href="<?php echo esc_url($tambah_url); ?>" class="btn-tambah" style="display: inline-block; padding: 10px 20px; background: #28a745; color: #fff; text-decoration: none; border-radius: 4px; font-weight: bold;">
-                + Tambah Dokumen
+                + Tambah <?php echo $label; ?>
             </a>
         </div>
     <?php endif; ?>
@@ -73,8 +75,8 @@ if (!defined('ABSPATH')) {
                                     Lihat Detail
                                 </a>
                                 <?php if (current_user_can('edit_posts')): ?>
-                                    <a href="<?php echo esc_url(add_query_arg(array('action' => 'edit', 'post_id' => get_the_ID()), home_url('/data'))); ?>" class="btn-edit" style="display: inline-block; padding: 6px 12px; background: #ffc107; color: #000; text-decoration: none; border-radius: 4px; font-size: 12px; width: 100%;">
-                                        Edit Dokumen
+                                    <a href="<?php echo esc_url(add_query_arg(array('action' => 'edit', 'post_id' => get_the_ID()), home_url('/data')); ?>" class="btn-edit" style="display: inline-block; padding: 6px 12px; background: #ffc107; color: #000; text-decoration: none; border-radius: 4px; font-size: 12px; width: 100%;">
+                                        Edit <?php echo $label; ?>
                                     </a>
                                 <?php endif; ?>
                             </td>
@@ -82,7 +84,7 @@ if (!defined('ABSPATH')) {
                     <?php endwhile; ?>
                 <?php else: ?>
                     <tr>
-                        <td colspan="6" style="padding: 20px; text-align: center; color: #666; border: 1px solid #dee2e6;">Belum ada dokumen yang ditemukan.</td>
+                        <td colspan="6" style="padding: 20px; text-align: center; color: #666; border: 1px solid #dee2e6;">Belum ada <?php echo $post_type === 'history' ? 'history' : 'dokumen'; ?> yang ditemukan.</td>
                     </tr>
                 <?php endif; ?>
             </tbody>

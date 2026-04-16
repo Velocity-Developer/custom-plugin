@@ -30,6 +30,7 @@ class PostTypes
     $this->register_document_category_taxonomy();
     $this->register_zone_taxonomy();
     $this->register_document_post_type();
+    $this->register_history_post_type();
     $this->register_default_document_categories();
   }
 
@@ -91,6 +92,64 @@ class PostTypes
     register_post_type('dokumen', $args);
   }
 
+  private function register_history_post_type()
+  {
+    $labels = array(
+      'name'                  => 'History',
+      'singular_name'         => 'History',
+      'menu_name'             => 'History',
+      'name_admin_bar'        => 'History',
+      'archives'              => 'Arsip History',
+      'attributes'            => 'Atribut History',
+      'parent_item_colon'     => 'Induk History:',
+      'all_items'             => 'Semua History',
+      'add_new_item'          => 'Tambah History Baru',
+      'add_new'               => 'Tambah Baru',
+      'new_item'              => 'History Baru',
+      'edit_item'             => 'Edit History',
+      'update_item'           => 'Perbarui History',
+      'view_item'             => 'Lihat History',
+      'view_items'            => 'Lihat History',
+      'search_items'          => 'Cari History',
+      'not_found'             => 'Tidak ditemukan',
+      'not_found_in_trash'    => 'Tidak ditemukan di Tong Sampah',
+      'featured_image'        => 'Gambar Utama',
+      'set_featured_image'    => 'Atur gambar utama',
+      'remove_featured_image' => 'Hapus gambar utama',
+      'use_featured_image'    => 'Gunakan sebagai gambar utama',
+      'insert_into_item'      => 'Masukkan ke dalam history',
+      'uploaded_to_this_item' => 'Diunggah ke history ini',
+      'items_list'            => 'Daftar history',
+      'items_list_navigation' => 'Navigasi daftar history',
+      'filter_items_list'     => 'Filter daftar history',
+    );
+
+    $args = array(
+      'label'               => 'History',
+      'description'         => 'History data dan transaksi',
+      'labels'              => $labels,
+      'supports'            => array('title', 'editor', 'excerpt', 'thumbnail'),
+      'taxonomies'          => array('document_category', 'zone'),
+      'hierarchical'        => false,
+      'public'              => true,
+      'show_ui'             => true,
+      'show_in_menu'        => true,
+      'menu_position'       => 6,
+      'menu_icon'           => 'dashicons-backup',
+      'show_in_admin_bar'   => true,
+      'show_in_nav_menus'   => true,
+      'can_export'          => true,
+      'has_archive'         => true,
+      'exclude_from_search' => false,
+      'publicly_queryable'  => true,
+      'capability_type'     => 'post',
+      'show_in_rest'        => true,
+      'rewrite'             => array('slug' => 'history'),
+    );
+
+    register_post_type('history', $args);
+  }
+
   private function register_document_category_taxonomy()
   {
     $labels = array(
@@ -117,7 +176,7 @@ class PostTypes
       'show_in_rest'      => true,
     );
 
-    register_taxonomy('document_category', array('dokumen'), $args);
+    register_taxonomy('document_category', array('dokumen', 'history'), $args);
   }
 
   private function register_zone_taxonomy()
@@ -146,7 +205,7 @@ class PostTypes
       'show_in_rest'      => true,
     );
 
-    register_taxonomy('zone', array('dokumen'), $args);
+    register_taxonomy('zone', array('dokumen', 'history'), $args);
   }
 
   private function register_default_document_categories()
