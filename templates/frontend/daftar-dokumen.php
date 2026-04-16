@@ -66,13 +66,13 @@ if (!defined('ABSPATH')) {
                                 </a>
                             </td>
                             <td style="padding: 12px; border: 1px solid #dee2e6;">
-                                <?php 
+                                <?php
                                 $cat_taxonomy = ($post_type === 'dokumen') ? 'document_category' : 'history_category';
                                 echo get_the_term_list(get_the_ID(), $cat_taxonomy, '', ', ');
                                 ?>
                             </td>
                             <td style="padding: 12px; border: 1px solid #dee2e6;">
-                                <?php 
+                                <?php
                                 $zone_taxonomy = ($post_type === 'dokumen') ? 'zone' : 'zone_history';
                                 echo get_the_term_list(get_the_ID(), $zone_taxonomy, '', ', ');
                                 ?>
@@ -85,7 +85,8 @@ if (!defined('ABSPATH')) {
                                     Lihat Detail
                                 </a>
                                 <?php if (current_user_can('edit_posts')): ?>
-                                    <a href="<?php echo esc_url(add_query_arg(array('action' => 'edit', 'post_id' => get_the_ID()), home_url('/data')); ?>" class="btn-edit" style="display: inline-block; padding: 6px 12px; background: #ffc107; color: #000; text-decoration: none; border-radius: 4px; font-size: 12px; width: 100%;">
+                                    <?php $label = $post_type === 'history' ? 'History' : 'Dokumen'; ?>
+                                    <a href="<?php echo esc_url(add_query_arg(array('action' => 'edit', 'post_id' => get_the_ID()), home_url('/data'))); ?>" class="btn-edit" style="display: inline-block; padding: 6px 12px; background: #ffc107; color: #000; text-decoration: none; border-radius: 4px; font-size: 12px; width: 100%;">
                                         Edit <?php echo $label; ?>
                                     </a>
                                 <?php endif; ?>
