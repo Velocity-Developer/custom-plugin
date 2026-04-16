@@ -83,10 +83,14 @@ if (!defined('ABSPATH')) {
 
             <div class="form-group" style="margin-bottom: 15px;">
                 <label style="display: block; margin-bottom: 5px;">Kategori <?php echo $post_type === 'history' ? 'History' : 'Dokumen'; ?></label>
-                <select name="document_category" style="width: 100%; padding: 8px;">
+                <select name="<?php echo $post_type === 'history' ? 'history_category' : 'document_category'; ?>" style="width: 100%; padding: 8px;">
                     <option value="">Pilih Kategori</option>
                     <?php
-                    $current_cat = $edit_post ? wp_get_object_terms($edit_post->ID, 'document_category', array('fields' => 'ids')) : array();
+                    if ($post_type === 'history') {
+                        $current_cat = $edit_post ? wp_get_object_terms($edit_post->ID, 'history_category', array('fields' => 'ids')) : array();
+                    } else {
+                        $current_cat = $edit_post ? wp_get_object_terms($edit_post->ID, 'document_category', array('fields' => 'ids')) : array();
+                    }
 
                     // Default from URL if not editing
                     if (!$edit_post && isset($_GET['cat_id'])) {
@@ -103,11 +107,15 @@ if (!defined('ABSPATH')) {
             </div>
 
             <div class="form-group" style="margin-bottom: 15px;">
-                <label style="display: block; margin-bottom: 5px;">Zone</label>
-                <select name="zone" style="width: 100%; padding: 8px;">
+                <label style="display: block; margin-bottom: 5px;">Zone <?php echo $post_type === 'history' ? 'History' : 'Dokumen'; ?></label>
+                <select name="<?php echo $post_type === 'history' ? 'zone_history' : 'zone'; ?>" style="width: 100%; padding: 8px;">
                     <option value="">Pilih Zone</option>
                     <?php
-                    $current_zone = $edit_post ? wp_get_object_terms($edit_post->ID, 'zone', array('fields' => 'ids')) : array();
+                    if ($post_type === 'history') {
+                        $current_zone = $edit_post ? wp_get_object_terms($edit_post->ID, 'zone_history', array('fields' => 'ids')) : array();
+                    } else {
+                        $current_zone = $edit_post ? wp_get_object_terms($edit_post->ID, 'zone', array('fields' => 'ids')) : array();
+                    }
 
                     // Default from URL if not editing
                     if (!$edit_post && isset($_GET['zone_id'])) {
@@ -156,10 +164,22 @@ if (!defined('ABSPATH')) {
                             </td>
                             <td style="padding: 10px; border: 1px solid #ddd;"><?php the_title(); ?></td>
                             <td style="padding: 10px; border: 1px solid #ddd;">
-                                <?php echo get_the_term_list(get_the_ID(), 'document_category', '', ', '); ?>
+                                <?php
+                                if ($post_type === 'history') {
+                                    echo get_the_term_list(get_the_ID(), 'history_category', '', ', ');
+                                } else {
+                                    echo get_the_term_list(get_the_ID(), 'document_category', '', ', ');
+                                }
+                                ?>
                             </td>
                             <td style="padding: 10px; border: 1px solid #ddd;">
-                                <?php echo get_the_term_list(get_the_ID(), 'zone', '', ', '); ?>
+                                <?php
+                                if ($post_type === 'history') {
+                                    echo get_the_term_list(get_the_ID(), 'zone_history', '', ', ');
+                                } else {
+                                    echo get_the_term_list(get_the_ID(), 'zone', '', ', ');
+                                }
+                                ?>
                             </td>
                             <td style="padding: 10px; border: 1px solid #ddd; text-align: center;">
                                 <a href="<?php echo add_query_arg(array('action' => 'edit', 'post_id' => get_the_ID())); ?>" style="display: inline-block; padding: 5px 10px; background: #ffc107; color: #000; text-decoration: none; border-radius: 4px; font-size: 12px; margin-right: 5px;">Edit</a>

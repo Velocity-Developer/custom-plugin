@@ -23,16 +23,25 @@ class PostTypes
   public function __construct()
   {
     add_action('init', array($this, 'register_post_types'));
-    add_action('pre_get_posts', array($this, 'filter_taxonomy_archive_by_post_type'));
   }
 
   public function register_post_types()
   {
+    // Register taxonomies for Dokumen
     $this->register_document_category_taxonomy();
     $this->register_zone_taxonomy();
+
+    // Register taxonomies for History
+    $this->register_history_category_taxonomy();
+    $this->register_zone_history_taxonomy();
+
+    // Register post types
     $this->register_document_post_type();
     $this->register_history_post_type();
+
+    // Register default categories
     $this->register_default_document_categories();
+    $this->register_default_history_categories();
   }
 
   private function register_document_post_type()
@@ -130,7 +139,7 @@ class PostTypes
       'description'         => 'History data dan transaksi',
       'labels'              => $labels,
       'supports'            => array('title', 'editor', 'excerpt', 'thumbnail'),
-      'taxonomies'          => array('document_category', 'zone'),
+      'taxonomies'          => array('history_category', 'zone_history'),
       'hierarchical'        => false,
       'public'              => true,
       'show_ui'             => true,
@@ -177,23 +186,23 @@ class PostTypes
       'show_in_rest'      => true,
     );
 
-    register_taxonomy('document_category', array('dokumen', 'history'), $args);
+    register_taxonomy('document_category', array('dokumen'), $args);
   }
 
   private function register_zone_taxonomy()
   {
     $labels = array(
-      'name'              => 'Zone',
-      'singular_name'     => 'Zone',
-      'search_items'      => 'Cari Zone',
-      'all_items'         => 'Semua Zone',
-      'parent_item'       => 'Induk Zone',
-      'parent_item_colon' => 'Induk Zone:',
-      'edit_item'         => 'Edit Zone',
-      'update_item'       => 'Perbarui Zone',
-      'add_new_item'      => 'Tambah Zone Baru',
-      'new_item_name'     => 'Nama Zone Baru',
-      'menu_name'         => 'Zone',
+      'name'              => 'Zone Dokumen',
+      'singular_name'     => 'Zone Dokumen',
+      'search_items'      => 'Cari Zone Dokumen',
+      'all_items'         => 'Semua Zone Dokumen',
+      'parent_item'       => 'Induk Zone Dokumen',
+      'parent_item_colon' => 'Induk Zone Dokumen:',
+      'edit_item'         => 'Edit Zone Dokumen',
+      'update_item'       => 'Perbarui Zone Dokumen',
+      'add_new_item'      => 'Tambah Zone Dokumen Baru',
+      'new_item_name'     => 'Nama Zone Dokumen Baru',
+      'menu_name'         => 'Zone Dokumen',
     );
 
     $args = array(
@@ -202,11 +211,69 @@ class PostTypes
       'show_ui'           => true,
       'show_admin_column' => true,
       'query_var'         => true,
-      'rewrite'           => array('slug' => 'zone'),
+      'rewrite'           => array('slug' => 'zone-dokumen'),
       'show_in_rest'      => true,
     );
 
-    register_taxonomy('zone', array('dokumen', 'history'), $args);
+    register_taxonomy('zone', array('dokumen'), $args);
+  }
+
+  private function register_history_category_taxonomy()
+  {
+    $labels = array(
+      'name'              => 'Kategori History',
+      'singular_name'     => 'Kategori History',
+      'search_items'      => 'Cari Kategori History',
+      'all_items'         => 'Semua Kategori History',
+      'parent_item'       => 'Induk Kategori History',
+      'parent_item_colon' => 'Induk Kategori History:',
+      'edit_item'         => 'Edit Kategori History',
+      'update_item'       => 'Perbarui Kategori History',
+      'add_new_item'      => 'Tambah Kategori History Baru',
+      'new_item_name'     => 'Nama Kategori History Baru',
+      'menu_name'         => 'Kategori History',
+    );
+
+    $args = array(
+      'hierarchical'      => true,
+      'labels'            => $labels,
+      'show_ui'           => true,
+      'show_admin_column' => true,
+      'query_var'         => true,
+      'rewrite'           => array('slug' => 'kategori-history'),
+      'show_in_rest'      => true,
+    );
+
+    register_taxonomy('history_category', array('history'), $args);
+  }
+
+  private function register_zone_history_taxonomy()
+  {
+    $labels = array(
+      'name'              => 'Zone History',
+      'singular_name'     => 'Zone History',
+      'search_items'      => 'Cari Zone History',
+      'all_items'         => 'Semua Zone History',
+      'parent_item'       => 'Induk Zone History',
+      'parent_item_colon' => 'Induk Zone History:',
+      'edit_item'         => 'Edit Zone History',
+      'update_item'       => 'Perbarui Zone History',
+      'add_new_item'      => 'Tambah Zone History Baru',
+      'new_item_name'     => 'Nama Zone History Baru',
+      'menu_name'         => 'Zone History',
+    );
+
+    $args = array(
+      'hierarchical'      => true,
+      'labels'            => $labels,
+      'show_ui'           => true,
+      'show_admin_column' => true,
+      'query_var'         => true,
+      'rewrite'           => array('slug' => 'zone-history'),
+      'show_in_rest'      => true,
+    );
+
+    register_taxonomy('zone_history', array('history'), $args);
   }
 
   private function register_default_document_categories()
@@ -226,12 +293,20 @@ class PostTypes
     }
   }
 
-  public function filter_taxonomy_archive_by_post_type($query)
+  private function register_default_history_categories()
   {
-    if ($query->is_main_query() && is_tax(array('document_category', 'zone'))) {
-      if (isset($_GET['post_type']) && in_array($_GET['post_type'], array('dokumen', 'history'))) {
-        $query->set('post_type', sanitize_text_field($_GET['post_type']));
+    foreach ($this->document_categories as $category_name) {
+      if (term_exists($category_name, 'history_category')) {
+        continue;
       }
+
+      wp_insert_term(
+        $category_name,
+        'history_category',
+        array(
+          'slug' => sanitize_title($category_name),
+        )
+      );
     }
   }
 }

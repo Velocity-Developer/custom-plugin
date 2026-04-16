@@ -142,12 +142,21 @@ class Shortcode
         }
 
         if ($result && !is_wp_error($result)) {
-            // Update taxonomies
-            if (isset($_POST['document_category'])) {
-                wp_set_object_terms($post_id, intval($_POST['document_category']), 'document_category');
-            }
-            if (isset($_POST['zone'])) {
-                wp_set_object_terms($post_id, intval($_POST['zone']), 'zone');
+            // Update taxonomies based on post type
+            if ($post_type === 'dokumen') {
+                if (isset($_POST['document_category'])) {
+                    wp_set_object_terms($post_id, intval($_POST['document_category']), 'document_category');
+                }
+                if (isset($_POST['zone'])) {
+                    wp_set_object_terms($post_id, intval($_POST['zone']), 'zone');
+                }
+            } else if ($post_type === 'history') {
+                if (isset($_POST['history_category'])) {
+                    wp_set_object_terms($post_id, intval($_POST['history_category']), 'history_category');
+                }
+                if (isset($_POST['zone_history'])) {
+                    wp_set_object_terms($post_id, intval($_POST['zone_history']), 'zone_history');
+                }
             }
 
             // Handle Image Upload
@@ -213,9 +222,14 @@ class Shortcode
 
         $query = new \WP_Query($args);
 
-        // Get taxonomies for form
-        $categories = get_terms(array('taxonomy' => 'document_category', 'hide_empty' => false));
-        $zones      = get_terms(array('taxonomy' => 'zone', 'hide_empty' => false));
+        // Get taxonomies for form based on post type
+        if ($post_type === 'dokumen') {
+            $categories = get_terms(array('taxonomy' => 'document_category', 'hide_empty' => false));
+            $zones      = get_terms(array('taxonomy' => 'zone', 'hide_empty' => false));
+        } else if ($post_type === 'history') {
+            $categories = get_terms(array('taxonomy' => 'history_category', 'hide_empty' => false));
+            $zones      = get_terms(array('taxonomy' => 'zone_history', 'hide_empty' => false));
+        }
 
         // Check if editing
         $edit_post = null;
@@ -260,6 +274,10 @@ class Shortcode
     {
         $paged = (get_query_var('paged')) ? get_query_var('paged') : 1;
 
+        // Get taxonomies slug based on post type
+        $cat_taxonomy = ($post_type === 'dokumen') ? 'document_category' : 'history_category';
+        $zone_taxonomy = ($post_type === 'dokumen') ? 'zone' : 'zone_history';
+
         $atts = shortcode_atts(array(
             'zone'     => '',
             'kategori' => '',
@@ -270,9 +288,9 @@ class Shortcode
         if (empty($atts['zone']) && empty($atts['kategori'])) {
             $queried_object = get_queried_object();
             if ($queried_object instanceof \WP_Term) {
-                if ($queried_object->taxonomy === 'zone') {
+                if ($queried_object->taxonomy === $zone_taxonomy) {
                     $atts['zone'] = $queried_object->slug;
-                } elseif ($queried_object->taxonomy === 'document_category') {
+                } elseif ($queried_object->taxonomy === $cat_taxonomy) {
                     $atts['kategori'] = $queried_object->slug;
                 }
             }
@@ -289,7 +307,7 @@ class Shortcode
 
         if (!empty($atts['zone'])) {
             $tax_query[] = array(
-                'taxonomy' => 'zone',
+                'taxonomy' => $zone_taxonomy,
                 'field'    => 'slug',
                 'terms'    => sanitize_text_field($atts['zone']),
             );
@@ -297,7 +315,7 @@ class Shortcode
 
         if (!empty($atts['kategori'])) {
             $tax_query[] = array(
-                'taxonomy' => 'document_category',
+                'taxonomy' => $cat_taxonomy,
                 'field'    => 'slug',
                 'terms'    => sanitize_text_field($atts['kategori']),
             );

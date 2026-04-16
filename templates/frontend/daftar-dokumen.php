@@ -21,8 +21,12 @@ if (!defined('ABSPATH')) {
             $tambah_url = home_url('/data');
             $current_queried_object = get_queried_object();
 
+            // Get taxonomies slug based on post type
+            $cat_taxonomy = ($post_type === 'dokumen') ? 'document_category' : 'history_category';
+            $zone_taxonomy = ($post_type === 'dokumen') ? 'zone' : 'zone_history';
+
             if ($current_queried_object instanceof WP_Term) {
-                $param_name = ($current_queried_object->taxonomy === 'zone') ? 'zone_id' : 'cat_id';
+                $param_name = ($current_queried_object->taxonomy === $zone_taxonomy) ? 'zone_id' : 'cat_id';
                 $tambah_url = add_query_arg($param_name, $current_queried_object->term_id, $tambah_url);
             }
             ?>
@@ -62,10 +66,16 @@ if (!defined('ABSPATH')) {
                                 </a>
                             </td>
                             <td style="padding: 12px; border: 1px solid #dee2e6;">
-                                <?php echo get_the_term_list(get_the_ID(), 'document_category', '', ', '); ?>
+                                <?php 
+                                $cat_taxonomy = ($post_type === 'dokumen') ? 'document_category' : 'history_category';
+                                echo get_the_term_list(get_the_ID(), $cat_taxonomy, '', ', ');
+                                ?>
                             </td>
                             <td style="padding: 12px; border: 1px solid #dee2e6;">
-                                <?php echo get_the_term_list(get_the_ID(), 'zone', '', ', '); ?>
+                                <?php 
+                                $zone_taxonomy = ($post_type === 'dokumen') ? 'zone' : 'zone_history';
+                                echo get_the_term_list(get_the_ID(), $zone_taxonomy, '', ', ');
+                                ?>
                             </td>
                             <td style="padding: 12px; border: 1px solid #dee2e6;">
                                 <?php echo get_the_date('d M Y'); ?>
