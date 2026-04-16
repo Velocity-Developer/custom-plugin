@@ -18,7 +18,7 @@ if (!defined('ABSPATH')) {
         <div style="margin-bottom: 20px; text-align: right;">
             <?php
             $label = $post_type === 'history' ? 'History' : 'Dokumen';
-            $tambah_url = home_url('/data');
+            $tambah_url = $post_type === 'history' ? home_url('/data-history/') : home_url('/data');
             $current_queried_object = get_queried_object();
 
             // Get taxonomies slug based on post type
@@ -86,7 +86,8 @@ if (!defined('ABSPATH')) {
                                 </a>
                                 <?php if (current_user_can('edit_posts')): ?>
                                     <?php $label = $post_type === 'history' ? 'History' : 'Dokumen'; ?>
-                                    <a href="<?php echo esc_url(add_query_arg(array('action' => 'edit', 'post_id' => get_the_ID()), home_url('/data'))); ?>" class="btn-edit" style="display: inline-block; padding: 6px 12px; background: #ffc107; color: #000; text-decoration: none; border-radius: 4px; font-size: 12px; width: 100%;">
+                                    <?php $edit_url = $post_type === 'history' ? home_url('/data-history/') : home_url('/data'); ?>
+                                    <a href="<?php echo esc_url(add_query_arg(array('action' => 'edit', 'post_id' => get_the_ID()), $edit_url)); ?>" class="btn-edit" style="display: inline-block; padding: 6px 12px; background: #ffc107; color: #000; text-decoration: none; border-radius: 4px; font-size: 12px; width: 100%;">
                                         Edit <?php echo $label; ?>
                                     </a>
                                 <?php endif; ?>

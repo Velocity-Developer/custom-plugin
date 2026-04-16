@@ -172,7 +172,11 @@ class Shortcode
                 }
             }
 
-            wp_redirect(add_query_arg('message', ($action === 'update' ? 'updated' : 'created'), wp_get_referer()));
+            $referer = wp_get_referer();
+            if (empty($referer)) {
+                $referer = $post_type === 'history' ? home_url('/data-history/') : home_url('/data');
+            }
+            wp_redirect(add_query_arg('message', ($action === 'update' ? 'updated' : 'created'), $referer));
             exit;
         }
     }
@@ -185,7 +189,11 @@ class Shortcode
         $post_id = intval($_POST['post_id']);
         if ($post_id > 0) {
             wp_delete_post($post_id, true);
-            wp_redirect(add_query_arg('message', 'deleted', wp_get_referer()));
+            $referer = wp_get_referer();
+            if (empty($referer)) {
+                $referer = $post_type === 'history' ? home_url('/data-history/') : home_url('/data');
+            }
+            wp_redirect(add_query_arg('message', 'deleted', $referer));
             exit;
         }
     }
