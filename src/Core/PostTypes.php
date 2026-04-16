@@ -23,6 +23,7 @@ class PostTypes
   public function __construct()
   {
     add_action('init', array($this, 'register_post_types'));
+    add_action('pre_get_posts', array($this, 'filter_taxonomy_archive_by_post_type'));
   }
 
   public function register_post_types()
@@ -222,6 +223,15 @@ class PostTypes
           'slug' => sanitize_title($category_name),
         )
       );
+    }
+  }
+
+  public function filter_taxonomy_archive_by_post_type($query)
+  {
+    if ($query->is_main_query() && is_tax(array('document_category', 'zone'))) {
+      if (isset($_GET['post_type']) && in_array($_GET['post_type'], array('dokumen', 'history'))) {
+        $query->set('post_type', sanitize_text_field($_GET['post_type']));
+      }
     }
   }
 }
