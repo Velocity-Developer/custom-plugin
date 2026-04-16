@@ -211,6 +211,10 @@ class Shortcode
      */
     private function generic_crud_shortcode($post_type, $atts)
     {
+        if (!is_user_logged_in()) {
+            return \CustomPlugin\Core\Template::get('frontend/login-required');
+        }
+
         $paged = (get_query_var('paged')) ? get_query_var('paged') : 1;
 
         $args = array(
@@ -272,6 +276,10 @@ class Shortcode
      */
     private function generic_daftar_shortcode($post_type, $atts)
     {
+        if (!is_user_logged_in()) {
+            return \CustomPlugin\Core\Template::get('frontend/login-required');
+        }
+
         $paged = (get_query_var('paged')) ? get_query_var('paged') : 1;
 
         // Get taxonomies slug based on post type

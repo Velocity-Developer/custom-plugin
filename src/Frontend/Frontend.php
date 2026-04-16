@@ -19,12 +19,39 @@ class Frontend
         // Example: To activate frontend hooks, uncomment below.
         // add_action('wp_enqueue_scripts', array($this, 'enqueue_scripts'));
         add_filter('language_attributes', array($this, 'velocitytheme_color_scheme'));
-        
+
         // Filter with priority and number of arguments
         // add_filter('excerpt_length', array($this, 'custom_excerpt_length'), 999, 1);
-        
+
         // Trigger a custom action (so other devs can hook into your plugin)
         // do_action('custom_plugin_after_frontend_init', $this);
+
+        // Protect single and archive templates
+        add_action('template_redirect', array($this, 'protect_single_and_archive'));
+    }
+
+    /**
+     * Protect single and archive templates for dokumen and history post types
+     */
+    public function protect_single_and_archive()
+    {
+        if (
+            (is_post_type_archive('dokumen') || is_singular('dokumen') ||
+                is_post_type_archive('history') || is_singular('history')) &&
+            !is_user_logged_in()
+        ) {
+            // Show login required message
+            add_filter('the_content', array($this, 'show_login_required_message'));
+        }
+    }
+
+    /**
+     * Show login required message for protected templates
+     */
+    public function show_login_required_message($content)
+    {
+        remove_filter('the_content', array($this, 'show_login_required_message'));
+        return \CustomPlugin\Core\Template::get('frontend/login-required');
     }
 
     /**
@@ -59,7 +86,7 @@ class Frontend
     public static function get_formatted_price($price)
     {
         $formatted = 'Rp ' . number_format($price, 0, ',', '.');
-        
+
         // Always provide a filter so others can modify your output
         return apply_filters('custom_plugin_format_price', $formatted, $price);
     }
