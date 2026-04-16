@@ -27,6 +27,9 @@ class Shortcode
 
         // Shortcode: [daftar_dokumen zone="" kategori="" limit="10"]
         add_shortcode('daftar_dokumen', array($this, 'daftar_dokumen_shortcode'));
+
+        // Shortcode: [custom_login]
+        add_shortcode('custom_login', array($this, 'custom_login_shortcode'));
     }
 
     /**
@@ -52,7 +55,46 @@ class Shortcode
             case 'delete':
                 $this->delete_document();
                 break;
+            case 'login':
+                $this->handle_login();
+                break;
         }
+    }
+
+    /**
+     * Handle Login Request
+     */
+    private function handle_login()
+    {
+        if (!isset($_POST['login_nonce']) || !wp_verify_nonce($_POST['login_nonce'], 'custom_login_nonce')) {
+            return;
+        }
+
+        // Verify Captcha
+        $user_captcha = isset($_POST['captcha']) ? sanitize_text_field($_POST['captcha']) : '';
+        $stored_captcha = isset($_COOKIE['custom_captcha']) ? $_COOKIE['custom_captcha'] : '';
+
+        if (empty($user_captcha) || $user_captcha !== $stored_captcha) {
+            wp_redirect(add_query_arg('login_error', 'captcha', wp_get_referer()));
+            exit;
+        }
+
+        $creds = array(
+            'user_login'    => sanitize_user($_POST['log']),
+            'user_password' => $_POST['pwd'],
+            'remember'      => isset($_POST['rememberme']),
+        );
+
+        $user = wp_signon($creds, is_ssl());
+
+        if (is_wp_error($user)) {
+            wp_redirect(add_query_arg('login_error', 'failed', wp_get_referer()));
+            exit;
+        }
+
+        // Success, redirect to home or data page
+        wp_redirect(home_url('/data'));
+        exit;
     }
 
     /**
@@ -209,5 +251,26 @@ class Shortcode
         );
 
         return \CustomPlugin\Core\Template::get('frontend/daftar-dokumen', $data);
+    }
+
+    /**
+     * Shortcode: [custom_login]
+     */
+    public function custom_login_shortcode()
+    {
+        if (is_user_logged_in()) {
+            return '<div class="alert alert-info">Anda sudah login. <a href="' . wp_logout_url(get_permalink()) . '">Logout</a></div>';
+        }
+
+        // Generate captcha
+        $captcha_str = substr(str_shuffle("ABCDEFGHJKLMNPQRSTUVWXYZ23456789"), 0, 5);
+        setcookie('custom_captcha', $captcha_str, time() + 300, '/');
+
+        $data = array(
+            'captcha_text' => $captcha_str,
+            'error'        => isset($_GET['login_error']) ? $_GET['login_error'] : '',
+        );
+
+        return \CustomPlugin\Core\Template::get('frontend/login-form', $data);
     }
 }
