@@ -7,6 +7,7 @@ use CustomPlugin\Frontend\Frontend;
 use CustomPlugin\Frontend\Shortcode;
 use CustomPlugin\Api\ExampleController;
 use CustomPlugin\Core\PostTypes;
+use CustomPlugin\Core\PropertyMetaBoxes;
 use CustomPlugin\Core\Taxonomies;
 use CustomPlugin\Core\CoreFeatures;
 
@@ -40,13 +41,14 @@ class Plugin
 
     // Initialize core modules
     new PostTypes();
+    new PropertyMetaBoxes();
     new Taxonomies();
     new CoreFeatures();
 
     // Example modules - uncomment to use or for reference
     // new Admin();
     new Frontend();
-    // new Shortcode();
+    new Shortcode();
     // new ExampleController();
   }
 
