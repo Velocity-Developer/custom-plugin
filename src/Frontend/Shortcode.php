@@ -19,8 +19,174 @@ class Shortcode
     public function __construct()
     {
         add_shortcode('compare', array($this, 'compare_shortcode'));
+        add_shortcode('property_search', array($this, 'property_search_shortcode'));
+        add_shortcode('search', array($this, 'search_shortcode'));
+        add_action('pre_get_posts', array($this, 'filter_property_search_query'));
 
         // add_shortcode('custom_hello', array($this, 'hello_shortcode'));
+    }
+
+    public function search_shortcode($atts)
+    {
+        return $this->property_search_shortcode($atts);
+    }
+
+    public function property_search_shortcode($atts)
+    {
+        $atts = shortcode_atts(
+            array(
+                'result_url' => '',
+            ),
+            $atts,
+            'property_search'
+        );
+
+        $result_url = $atts['result_url'] ? esc_url_raw($atts['result_url']) : get_post_type_archive_link('property');
+
+        if (!$result_url) {
+            $result_url = get_permalink();
+        }
+
+        return Template::get('frontend/property-search', array(
+            'result_url'         => $result_url,
+            'locations'          => $this->get_taxonomy_options('location'),
+            'property_types'     => $this->get_taxonomy_options('property_type'),
+            'property_projects'  => $this->get_taxonomy_options('property_project'),
+            'price_ranges'       => $this->price_range_options(),
+            'selected_location'  => $this->get_query_value('property_location'),
+            'selected_type'      => $this->get_query_value('property_type'),
+            'selected_project'   => $this->get_query_value('property_project'),
+            'selected_price'     => $this->get_query_value('property_price'),
+        ));
+    }
+
+    public function filter_property_search_query($query)
+    {
+        if (is_admin() || !$query->is_main_query()) {
+            return;
+        }
+
+        $post_type = $query->get('post_type');
+        $is_property_query = $query->is_post_type_archive('property') || $post_type === 'property';
+
+        if (is_array($post_type)) {
+            $is_property_query = in_array('property', $post_type, true);
+        }
+
+        if (!$is_property_query) {
+            return;
+        }
+
+        $tax_query = array();
+        $taxonomies = array(
+            'property_location' => 'location',
+            'property_type'     => 'property_type',
+            'property_project'  => 'property_project',
+        );
+
+        foreach ($taxonomies as $query_key => $taxonomy) {
+            $value = $this->get_query_value($query_key);
+
+            if ($value) {
+                $tax_query[] = array(
+                    'taxonomy' => $taxonomy,
+                    'field'    => 'slug',
+                    'terms'    => $value,
+                );
+            }
+        }
+
+        if (count($tax_query) > 1) {
+            $tax_query['relation'] = 'AND';
+        }
+
+        if (!empty($tax_query)) {
+            $query->set('tax_query', $tax_query);
+        }
+
+        $price_range = $this->get_price_range($this->get_query_value('property_price'));
+
+        if ($price_range) {
+            $meta_query = (array) $query->get('meta_query');
+
+            $price_query = array(
+                'key'     => 'property_price',
+                'type'    => 'NUMERIC',
+                'compare' => 'BETWEEN',
+                'value'   => array($price_range['min'], $price_range['max']),
+            );
+
+            if ($price_range['min'] && !$price_range['max']) {
+                $price_query['compare'] = '>=';
+                $price_query['value'] = $price_range['min'];
+            } elseif (!$price_range['min'] && $price_range['max']) {
+                $price_query['compare'] = '<=';
+                $price_query['value'] = $price_range['max'];
+            }
+
+            $meta_query[] = $price_query;
+            $query->set('meta_query', $meta_query);
+        }
+    }
+
+    private function get_taxonomy_options($taxonomy)
+    {
+        $terms = get_terms(array(
+            'taxonomy'   => $taxonomy,
+            'hide_empty' => false,
+            'orderby'    => 'name',
+            'order'      => 'ASC',
+        ));
+
+        if (is_wp_error($terms)) {
+            return array();
+        }
+
+        return $terms;
+    }
+
+    private function get_query_value($key)
+    {
+        return isset($_GET[$key]) ? sanitize_key(wp_unslash($_GET[$key])) : '';
+    }
+
+    private function price_range_options()
+    {
+        return array(
+            'under_500m' => 'Di bawah 500 Juta',
+            '500m_1b'    => '500 Juta - 1 Miliar',
+            '1b_2b'      => '1 - 2 Miliar',
+            '2b_5b'      => '2 - 5 Miliar',
+            'above_5b'   => 'Di atas 5 Miliar',
+        );
+    }
+
+    private function get_price_range($key)
+    {
+        $ranges = array(
+            'under_500m' => array(
+                'min' => 0,
+                'max' => 500000000,
+            ),
+            '500m_1b' => array(
+                'min' => 500000000,
+                'max' => 1000000000,
+            ),
+            '1b_2b' => array(
+                'min' => 1000000000,
+                'max' => 2000000000,
+            ),
+            '2b_5b' => array(
+                'min' => 2000000000,
+                'max' => 5000000000,
+            ),
+            'above_5b' => array(
+                'min' => 5000000000,
+                'max' => 0,
+            ),
+        );
+
+        return isset($ranges[$key]) ? $ranges[$key] : array();
     }
 
     public function compare_shortcode($atts)
