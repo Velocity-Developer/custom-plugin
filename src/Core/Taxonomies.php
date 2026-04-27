@@ -11,7 +11,8 @@ class Taxonomies
 
     public function __construct()
     {
-        add_action('init', array($this, 'register_taxonomies'));
+        add_action('init', array($this, 'register_taxonomies'), 0);
+        add_action('init', array($this, 'attach_taxonomies_to_property'), 20);
     }
 
     public function register_taxonomies()
@@ -21,6 +22,13 @@ class Taxonomies
         $this->register_property_project_taxonomy();
         // Example: Register 'project_category' Taxonomy
         // $this->register_project_category();
+    }
+
+    public function attach_taxonomies_to_property()
+    {
+        register_taxonomy_for_object_type('location', 'property');
+        register_taxonomy_for_object_type('property_type', 'property');
+        register_taxonomy_for_object_type('property_project', 'property');
     }
 
     /**
@@ -46,6 +54,7 @@ class Taxonomies
             'hierarchical'      => true,
             'labels'            => $labels,
             'show_ui'           => true,
+            'show_in_menu'      => 'edit.php?post_type=property',
             'show_admin_column' => true,
             'query_var'         => true,
             'rewrite'           => array('slug' => 'location'),
@@ -78,6 +87,7 @@ class Taxonomies
             'hierarchical'      => true,
             'labels'            => $labels,
             'show_ui'           => true,
+            'show_in_menu'      => 'edit.php?post_type=property',
             'show_admin_column' => true,
             'query_var'         => true,
             'rewrite'           => array('slug' => 'property-type'),
@@ -110,6 +120,7 @@ class Taxonomies
             'hierarchical'      => true,
             'labels'            => $labels,
             'show_ui'           => true,
+            'show_in_menu'      => 'edit.php?post_type=property',
             'show_admin_column' => true,
             'query_var'         => true,
             'rewrite'           => array('slug' => 'property-project'),
