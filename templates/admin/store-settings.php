@@ -26,16 +26,21 @@ if (!defined('ABSPATH')) {
         <table class="form-table" role="presentation">
             <tbody>
                 <tr>
-                    <th scope="row"><label for="bank-name">Nama Bank</label></th>
-                    <td><input type="text" class="regular-text" id="bank-name" name="bank_name" value="<?php echo esc_attr($settings['bank_name']); ?>"></td>
-                </tr>
-                <tr>
-                    <th scope="row"><label for="bank-account-name">Nama Pemilik Rekening</label></th>
-                    <td><input type="text" class="regular-text" id="bank-account-name" name="bank_account_name" value="<?php echo esc_attr($settings['bank_account_name']); ?>"></td>
-                </tr>
-                <tr>
-                    <th scope="row"><label for="bank-account-number">Nomor Rekening</label></th>
-                    <td><input type="text" class="regular-text" id="bank-account-number" name="bank_account_number" value="<?php echo esc_attr($settings['bank_account_number']); ?>"></td>
+                    <th scope="row">Daftar Rekening Bank</th>
+                    <td>
+                        <?php $banks = !empty($settings['banks']) ? $settings['banks'] : array(array('bank_name' => '', 'bank_account_name' => '', 'bank_account_number' => '')); ?>
+                        <div id="custom-plugin-bank-list">
+                            <?php foreach ($banks as $index => $bank) : ?>
+                                <div class="custom-plugin-bank-item" style="margin-bottom:16px;padding:16px;border:1px solid #dcdcde;border-radius:6px;">
+                                    <p><label>Nama Bank<br><input type="text" class="regular-text" name="banks[<?php echo esc_attr((string) $index); ?>][bank_name]" value="<?php echo esc_attr($bank['bank_name']); ?>"></label></p>
+                                    <p><label>Nama Pemilik Rekening<br><input type="text" class="regular-text" name="banks[<?php echo esc_attr((string) $index); ?>][bank_account_name]" value="<?php echo esc_attr($bank['bank_account_name']); ?>"></label></p>
+                                    <p><label>Nomor Rekening<br><input type="text" class="regular-text" name="banks[<?php echo esc_attr((string) $index); ?>][bank_account_number]" value="<?php echo esc_attr($bank['bank_account_number']); ?>"></label></p>
+                                </div>
+                            <?php endforeach; ?>
+                        </div>
+                        <p><button type="button" class="button" id="custom-plugin-add-bank">Tambah Bank</button></p>
+                        <p class="description">Tambahkan satu blok rekening untuk setiap bank yang ingin ditampilkan di form order.</p>
+                    </td>
                 </tr>
                 <tr>
                     <th scope="row"><label for="qris-image-id">Gambar QRIS</label></th>

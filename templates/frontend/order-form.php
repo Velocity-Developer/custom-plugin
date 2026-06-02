@@ -67,11 +67,15 @@ if (!defined('ABSPATH')) {
                             <div class="col-12">
                                 <div class="alert alert-light border mb-0" role="alert">
                                     <div class="fw-semibold mb-2">Informasi Pembayaran</div>
-                                    <?php if (!empty($store_settings['bank_name']) || !empty($store_settings['bank_account_number'])) : ?>
-                                        <div class="mb-2">
-                                            <div>Bank: <?php echo esc_html($store_settings['bank_name'] !== '' ? $store_settings['bank_name'] : '-'); ?></div>
-                                            <div>Rekening: <?php echo esc_html($store_settings['bank_account_number'] !== '' ? $store_settings['bank_account_number'] : '-'); ?></div>
-                                            <div>Atas Nama: <?php echo esc_html($store_settings['bank_account_name'] !== '' ? $store_settings['bank_account_name'] : '-'); ?></div>
+                                    <?php if (!empty($store_settings['banks'])) : ?>
+                                        <div class="mb-3">
+                                            <?php foreach ($store_settings['banks'] as $bank) : ?>
+                                                <div class="border rounded p-3 mb-2 bg-white">
+                                                    <div>Bank: <?php echo esc_html($bank['bank_name'] !== '' ? $bank['bank_name'] : '-'); ?></div>
+                                                    <div>Rekening: <?php echo esc_html($bank['bank_account_number'] !== '' ? $bank['bank_account_number'] : '-'); ?></div>
+                                                    <div>Atas Nama: <?php echo esc_html($bank['bank_account_name'] !== '' ? $bank['bank_account_name'] : '-'); ?></div>
+                                                </div>
+                                            <?php endforeach; ?>
                                         </div>
                                     <?php endif; ?>
                                     <?php if (!empty($store_settings['qris_image_id'])) : ?>

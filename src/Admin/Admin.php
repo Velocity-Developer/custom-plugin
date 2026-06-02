@@ -66,6 +66,19 @@ class Admin
             wp_enqueue_media();
             $script = <<<'JS'
 (function($){
+    $(document).on('click', '#custom-plugin-add-bank', function(e){
+        e.preventDefault();
+        var list = $('#custom-plugin-bank-list');
+        var index = list.children('.custom-plugin-bank-item').length;
+        var html = '' +
+            '<div class="custom-plugin-bank-item" style="margin-bottom:16px;padding:16px;border:1px solid #dcdcde;border-radius:6px;">' +
+                '<p><label>Nama Bank<br><input type="text" class="regular-text" name="banks[' + index + '][bank_name]" value=""></label></p>' +
+                '<p><label>Nama Pemilik Rekening<br><input type="text" class="regular-text" name="banks[' + index + '][bank_account_name]" value=""></label></p>' +
+                '<p><label>Nomor Rekening<br><input type="text" class="regular-text" name="banks[' + index + '][bank_account_number]" value=""></label></p>' +
+            '</div>';
+        list.append(html);
+    });
+
     $(document).on('click','.custom-plugin-media-button',function(e){
         e.preventDefault();
         var target = $($(this).data('target'));
@@ -182,10 +195,27 @@ JS;
             $this->redirect_with_feedback('nonce_error', self::STORE_MENU_SLUG, admin_url('edit.php?post_type=produk'));
         }
 
+        $banks = array();
+        if (isset($_POST['banks']) && is_array($_POST['banks'])) {
+            foreach (wp_unslash($_POST['banks']) as $bank) {
+                $bank_name = isset($bank['bank_name']) ? sanitize_text_field($bank['bank_name']) : '';
+                $bank_account_name = isset($bank['bank_account_name']) ? sanitize_text_field($bank['bank_account_name']) : '';
+                $bank_account_number = isset($bank['bank_account_number']) ? sanitize_text_field($bank['bank_account_number']) : '';
+
+                if ($bank_name === '' && $bank_account_name === '' && $bank_account_number === '') {
+                    continue;
+                }
+
+                $banks[] = array(
+                    'bank_name' => $bank_name,
+                    'bank_account_name' => $bank_account_name,
+                    'bank_account_number' => $bank_account_number,
+                );
+            }
+        }
+
         $settings = array(
-            'bank_name' => isset($_POST['bank_name']) ? sanitize_text_field(wp_unslash($_POST['bank_name'])) : '',
-            'bank_account_name' => isset($_POST['bank_account_name']) ? sanitize_text_field(wp_unslash($_POST['bank_account_name'])) : '',
-            'bank_account_number' => isset($_POST['bank_account_number']) ? sanitize_text_field(wp_unslash($_POST['bank_account_number'])) : '',
+            'banks' => $banks,
             'qris_image_id' => isset($_POST['qris_image_id']) ? absint($_POST['qris_image_id']) : 0,
         );
 
@@ -284,14 +314,26 @@ JS;
     public static function get_store_settings()
     {
         $defaults = array(
-            'bank_name' => '',
-            'bank_account_name' => '',
-            'bank_account_number' => '',
+            'banks' => array(),
             'qris_image_id' => 0,
         );
 
         $settings = get_option(self::STORE_OPTION_KEY, array());
-        return wp_parse_args($settings, $defaults);
+        $settings = wp_parse_args($settings, $defaults);
+
+        if (empty($settings['banks']) && (!empty($settings['bank_name']) || !empty($settings['bank_account_name']) || !empty($settings['bank_account_number']))) {
+            $settings['banks'] = array(
+                array(
+                    'bank_name' => isset($settings['bank_name']) ? $settings['bank_name'] : '',
+                    'bank_account_name' => isset($settings['bank_account_name']) ? $settings['bank_account_name'] : '',
+                    'bank_account_number' => isset($settings['bank_account_number']) ? $settings['bank_account_number'] : '',
+                ),
+            );
+        }
+
+        unset($settings['bank_name'], $settings['bank_account_name'], $settings['bank_account_number']);
+
+        return $settings;
     }
 
     private function get_feedback_message()
