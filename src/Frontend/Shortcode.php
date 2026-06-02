@@ -18,6 +18,7 @@ class Shortcode
 {
     const ORDER_SHORTCODE = 'custom_order_form';
     const PRICE_SHORTCODE = 'custom_product_price';
+    const BUY_BUTTON_SHORTCODE = 'custom_buy_button';
     const ORDER_NONCE_ACTION = 'custom_plugin_submit_order';
     const ORDER_NONCE_NAME = 'custom_plugin_order_form_nonce';
 
@@ -25,6 +26,7 @@ class Shortcode
     {
         add_shortcode(self::ORDER_SHORTCODE, array($this, 'order_form_shortcode'));
         add_shortcode(self::PRICE_SHORTCODE, array($this, 'product_price_shortcode'));
+        add_shortcode(self::BUY_BUTTON_SHORTCODE, array($this, 'buy_button_shortcode'));
         add_action('init', array($this, 'handle_order_submission'));
     }
 
@@ -128,6 +130,51 @@ class Shortcode
         return esc_html($atts['before']) . Frontend::get_formatted_price((int) $price) . esc_html($atts['after']);
     }
 
+    /**
+     * Shortcode: [custom_buy_button id="123" text="Beli Sekarang"]
+     *
+     * If `id` is not provided, it will try to use the current product post ID.
+     *
+     * @param array $atts
+     * @return string
+     */
+    public function buy_button_shortcode($atts)
+    {
+        $atts = shortcode_atts(
+            array(
+                'id'    => 0,
+                'text'  => 'Beli Sekarang',
+                'url'   => 'https://tinelogas.com/order/',
+                'class' => '',
+            ),
+            $atts,
+            self::BUY_BUTTON_SHORTCODE
+        );
+
+        $product_id = absint($atts['id']);
+        if ($product_id < 1) {
+            $product_id = $this->resolve_current_product_id();
+        }
+
+        if ($product_id < 1) {
+            return '';
+        }
+
+        $order_url = add_query_arg(
+            array('product_id' => $product_id),
+            esc_url_raw($atts['url'])
+        );
+
+        $button_classes = trim('btn btn-lg custom-plugin-buy-button ' . $atts['class']);
+
+        return sprintf(
+            '<a class="%1$s" href="%2$s">%3$s</a>',
+            esc_attr($button_classes),
+            esc_url($order_url),
+            esc_html($atts['text'])
+        ) . $this->get_buy_button_styles();
+    }
+
     private function resolve_current_product_id()
     {
         $queried_object_id = get_queried_object_id();
@@ -146,6 +193,35 @@ class Shortcode
         }
 
         return 0;
+    }
+
+    private function get_buy_button_styles()
+    {
+        static $styles_rendered = false;
+
+        if ($styles_rendered) {
+            return '';
+        }
+
+        $styles_rendered = true;
+
+        return '<style>
+            .custom-plugin-buy-button {
+                --bs-btn-color: #fff;
+                --bs-btn-bg: #F83C89;
+                --bs-btn-border-color: #F83C89;
+                --bs-btn-hover-color: #fff;
+                --bs-btn-hover-bg: #e2357c;
+                --bs-btn-hover-border-color: #e2357c;
+                --bs-btn-focus-shadow-rgb: 248, 60, 137;
+                --bs-btn-active-color: #fff;
+                --bs-btn-active-bg: #d82f73;
+                --bs-btn-active-border-color: #d82f73;
+                --bs-btn-disabled-color: #fff;
+                --bs-btn-disabled-bg: #F83C89;
+                --bs-btn-disabled-border-color: #F83C89;
+            }
+        </style>';
     }
 
     public function handle_order_submission()
