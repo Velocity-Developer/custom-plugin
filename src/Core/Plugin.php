@@ -5,6 +5,7 @@ namespace CustomPlugin\Core;
 use CustomPlugin\Admin\Admin;
 use CustomPlugin\Frontend\Frontend;
 use CustomPlugin\Frontend\Shortcode;
+use CustomPlugin\Frontend\CourierDashboard;
 use CustomPlugin\Api\ExampleController;
 use CustomPlugin\Core\PostTypes;
 use CustomPlugin\Core\Taxonomies;
@@ -49,6 +50,7 @@ class Plugin
     // Example modules - uncomment to use or for reference
     // new Admin();
     new Frontend();
+    new CourierDashboard();
     // new Shortcode();
     // new ExampleController();
   }
