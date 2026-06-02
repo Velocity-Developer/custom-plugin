@@ -64,11 +64,11 @@ if (!defined('ABSPATH')) {
                                 </select>
                             </div>
 
-                            <div class="col-12">
+                            <div class="col-12 d-none" id="payment-info-wrapper">
                                 <div class="alert alert-light border mb-0" role="alert">
                                     <div class="fw-semibold mb-2">Informasi Pembayaran</div>
                                     <?php if (!empty($store_settings['banks'])) : ?>
-                                        <div class="mb-3">
+                                        <div class="mb-3 d-none" id="bank-payment-info">
                                             <?php foreach ($store_settings['banks'] as $bank) : ?>
                                                 <div class="border rounded p-3 mb-2 bg-white">
                                                     <div>Bank: <?php echo esc_html($bank['bank_name'] !== '' ? $bank['bank_name'] : '-'); ?></div>
@@ -79,7 +79,7 @@ if (!defined('ABSPATH')) {
                                         </div>
                                     <?php endif; ?>
                                     <?php if (!empty($store_settings['qris_image_id'])) : ?>
-                                        <div>
+                                        <div class="d-none" id="qris-payment-info">
                                             <?php echo wp_get_attachment_image((int) $store_settings['qris_image_id'], 'medium', false, array('class' => 'img-fluid rounded border', 'alt' => 'QRIS')); ?>
                                         </div>
                                     <?php endif; ?>
@@ -145,9 +145,42 @@ if (!defined('ABSPATH')) {
         var button = document.getElementById('detect-location-button');
         var gpsField = document.getElementById('customer-gps');
         var helpText = document.getElementById('location-help-text');
+        var paymentMethod = document.getElementById('payment-method');
+        var paymentInfoWrapper = document.getElementById('payment-info-wrapper');
+        var bankPaymentInfo = document.getElementById('bank-payment-info');
+        var qrisPaymentInfo = document.getElementById('qris-payment-info');
 
         if (!button || !gpsField || !helpText) {
             return;
+        }
+
+        function updatePaymentInfo() {
+            if (!paymentMethod || !paymentInfoWrapper) {
+                return;
+            }
+
+            paymentInfoWrapper.classList.add('d-none');
+            if (bankPaymentInfo) {
+                bankPaymentInfo.classList.add('d-none');
+            }
+            if (qrisPaymentInfo) {
+                qrisPaymentInfo.classList.add('d-none');
+            }
+
+            if (paymentMethod.value === 'bank_transfer' && bankPaymentInfo) {
+                paymentInfoWrapper.classList.remove('d-none');
+                bankPaymentInfo.classList.remove('d-none');
+            }
+
+            if (paymentMethod.value === 'digital_wallet' && qrisPaymentInfo) {
+                paymentInfoWrapper.classList.remove('d-none');
+                qrisPaymentInfo.classList.remove('d-none');
+            }
+        }
+
+        if (paymentMethod) {
+            paymentMethod.addEventListener('change', updatePaymentInfo);
+            updatePaymentInfo();
         }
 
         button.addEventListener('click', function() {
