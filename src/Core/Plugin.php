@@ -48,7 +48,7 @@ class Plugin
     new OrderMetaBoxes();
 
     // Example modules - uncomment to use or for reference
-    // new Admin();
+    new Admin();
     new Frontend();
     new CourierDashboard();
     // new Shortcode();
