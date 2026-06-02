@@ -227,7 +227,7 @@ class CourierDashboard
 
     private function redirect_with_feedback($status)
     {
-        $redirect_url = wp_get_referer();
+        $redirect_url = $this->get_dashboard_url();
         if (!$redirect_url) {
             $redirect_url = home_url('/');
         }
