@@ -53,7 +53,7 @@ class Plugin
     new Admin();
     new Frontend();
     new CourierDashboard();
-    // new Shortcode();
+    new Shortcode();
     // new ExampleController();
   }
 
