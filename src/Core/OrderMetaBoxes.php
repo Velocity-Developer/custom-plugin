@@ -21,12 +21,16 @@ class OrderMetaBoxes
     'payment_method'      => 'select',
     'order_status'        => 'select',
     'assigned_courier_id' => 'user',
+    'delivery_proof_url'  => 'url',
+    'cod_payment_proof_url' => 'url',
   );
 
   public function __construct()
   {
     add_action('add_meta_boxes', array($this, 'register_meta_boxes'));
     add_action('save_post_order', array($this, 'save_order_meta'));
+    add_filter('manage_order_posts_columns', array($this, 'filter_order_columns'));
+    add_action('manage_order_posts_custom_column', array($this, 'render_order_column'), 10, 2);
   }
 
   public function register_meta_boxes()
@@ -89,7 +93,61 @@ class OrderMetaBoxes
       )
     );
     $this->render_user_select_row('Kurir', 'assigned_courier_id', $values['assigned_courier_id'], $couriers);
+    $this->render_text_row('Bukti Pengiriman', 'delivery_proof_url', $values['delivery_proof_url'], 'Masukkan URL file atau gambar bukti kirim.', 'url');
+    $this->render_text_row('Bukti Pembayaran COD', 'cod_payment_proof_url', $values['cod_payment_proof_url'], 'Isi jika metode pembayaran COD.', 'url');
     echo '</tbody></table>';
+  }
+
+  public function filter_order_columns($columns)
+  {
+    $new_columns = array();
+
+    foreach ($columns as $key => $label) {
+      $new_columns[$key] = $label;
+
+      if ($key === 'title') {
+        $new_columns['order_status'] = 'Status';
+        $new_columns['delivery_schedule'] = 'Jadwal Kirim';
+        $new_columns['assigned_courier'] = 'Kurir';
+        $new_columns['payment_method'] = 'Pembayaran';
+      }
+    }
+
+    return $new_columns;
+  }
+
+  public function render_order_column($column, $post_id)
+  {
+    if ($column === 'order_status') {
+      $status = get_post_meta($post_id, '_order_order_status', true);
+      echo esc_html($this->get_order_status_label($status));
+      return;
+    }
+
+    if ($column === 'delivery_schedule') {
+      $date = get_post_meta($post_id, '_order_delivery_date', true);
+      $time = get_post_meta($post_id, '_order_delivery_time', true);
+      $schedule = trim($date . ' ' . $time);
+      echo $schedule !== '' ? esc_html($schedule) : '-';
+      return;
+    }
+
+    if ($column === 'assigned_courier') {
+      $courier_id = absint(get_post_meta($post_id, '_order_assigned_courier_id', true));
+      if ($courier_id < 1) {
+        echo '-';
+        return;
+      }
+
+      $courier = get_user_by('id', $courier_id);
+      echo $courier ? esc_html($courier->display_name) : '-';
+      return;
+    }
+
+    if ($column === 'payment_method') {
+      $payment_method = get_post_meta($post_id, '_order_payment_method', true);
+      echo esc_html($this->get_payment_method_label($payment_method));
+    }
   }
 
   public function save_order_meta($post_id)
@@ -172,7 +230,37 @@ class OrderMetaBoxes
       return in_array($raw_value, $allowed, true) ? $raw_value : '';
     }
 
+    if ($field_type === 'url') {
+      return esc_url_raw($raw_value);
+    }
+
     return sanitize_text_field($raw_value);
+  }
+
+  private function get_payment_method_label($payment_method)
+  {
+    $labels = array(
+      'bank_transfer'  => 'Transfer Bank',
+      'digital_wallet' => 'Transfer Dompet Digital',
+      'cod'            => 'COD',
+    );
+
+    return isset($labels[$payment_method]) ? $labels[$payment_method] : '-';
+  }
+
+  private function get_order_status_label($status)
+  {
+    $labels = array(
+      'pending'    => 'Pending',
+      'scheduled'  => 'Terjadwal',
+      'processing' => 'Diproses',
+      'delivering' => 'Dalam Pengiriman',
+      'delivered'  => 'Terkirim',
+      'completed'  => 'Selesai',
+      'cancelled'  => 'Dibatalkan',
+    );
+
+    return isset($labels[$status]) ? $labels[$status] : '-';
   }
 
   private function render_text_row($label, $field_key, $value, $description = '', $type = 'text')
