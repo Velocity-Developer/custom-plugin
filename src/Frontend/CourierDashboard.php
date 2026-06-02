@@ -19,6 +19,8 @@ class CourierDashboard
     {
         add_shortcode(self::SHORTCODE, array($this, 'render_shortcode'));
         add_action('init', array($this, 'handle_form_submission'));
+        add_filter('login_redirect', array($this, 'redirect_courier_after_login'), 10, 3);
+        add_action('admin_init', array($this, 'block_courier_admin_access'));
     }
 
     public function render_shortcode()
@@ -120,6 +122,36 @@ class CourierDashboard
         $this->redirect_with_feedback('updated');
     }
 
+    public function redirect_courier_after_login($redirect_to, $requested_redirect_to, $user)
+    {
+        if (!($user instanceof \WP_User)) {
+            return $redirect_to;
+        }
+
+        if (!in_array(Roles::COURIER_ROLE, (array) $user->roles, true)) {
+            return $redirect_to;
+        }
+
+        $dashboard_url = $this->get_dashboard_url();
+        return $dashboard_url ? $dashboard_url : home_url('/');
+    }
+
+    public function block_courier_admin_access()
+    {
+        if (!is_user_logged_in() || wp_doing_ajax()) {
+            return;
+        }
+
+        $current_user = wp_get_current_user();
+        if (!in_array(Roles::COURIER_ROLE, (array) $current_user->roles, true)) {
+            return;
+        }
+
+        $dashboard_url = $this->get_dashboard_url();
+        wp_safe_redirect($dashboard_url ? $dashboard_url : home_url('/'));
+        exit;
+    }
+
     private function handle_upload($file_key, $meta_key, $order_id)
     {
         if (empty($_FILES[$file_key]['name'])) {
@@ -146,6 +178,22 @@ class CourierDashboard
     private function is_order_assigned_to_courier($order_id, $courier_id)
     {
         return (string) $courier_id === (string) get_post_meta($order_id, '_order_assigned_courier_id', true);
+    }
+
+    private function get_dashboard_url()
+    {
+        $pages = get_posts(array(
+            'post_type'      => 'page',
+            'post_status'    => 'publish',
+            'posts_per_page' => 1,
+            's'              => '[' . self::SHORTCODE . ']',
+        ));
+
+        if (!empty($pages)) {
+            return get_permalink($pages[0]->ID);
+        }
+
+        return '';
     }
 
     private function redirect_with_feedback($status)
