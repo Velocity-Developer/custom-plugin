@@ -6,86 +6,112 @@ if (!defined('ABSPATH')) {
     exit;
 }
 ?>
-<div class="custom-plugin-order-form">
-    <h2>Form Order</h2>
+<div class="custom-plugin-order-form container py-4">
+    <div class="row justify-content-center">
+        <div class="col-12 col-lg-8">
+            <div class="card shadow-sm border-0">
+                <div class="card-body p-4 p-md-5">
+                    <div class="mb-4">
+                        <h2 class="h3 mb-2">Form Order</h2>
+                        <p class="text-body-secondary mb-0">Isi data pesanan dan jadwal pengiriman yang Anda inginkan.</p>
+                    </div>
 
-    <?php if (!empty($feedback)) : ?>
-        <p><strong><?php echo esc_html($feedback); ?></strong></p>
-    <?php endif; ?>
+                    <?php if (!empty($feedback)) : ?>
+                        <div class="alert <?php echo isset($_GET['order_status']) && $_GET['order_status'] === 'created' ? 'alert-success' : 'alert-warning'; ?> mb-4" role="alert">
+                            <?php echo esc_html($feedback); ?>
+                        </div>
+                    <?php endif; ?>
 
-    <?php if (empty($products)) : ?>
-        <p>Produk belum tersedia.</p>
-    <?php else : ?>
-        <form method="post">
-            <?php wp_nonce_field($nonce_action, $nonce_name); ?>
-            <input type="hidden" name="custom_plugin_frontend_action" value="submit_order">
+                    <?php if (empty($products)) : ?>
+                        <div class="alert alert-secondary mb-0" role="alert">
+                            Produk belum tersedia.
+                        </div>
+                    <?php else : ?>
+                        <form method="post" class="row g-3">
+                            <?php wp_nonce_field($nonce_action, $nonce_name); ?>
+                            <input type="hidden" name="custom_plugin_frontend_action" value="submit_order">
 
-            <p>
-                <label for="product-id"><strong>Pilih Produk</strong></label><br>
-                <select id="product-id" name="product_id" required>
-                    <option value="">Pilih produk</option>
-                    <?php foreach ($products as $product) : ?>
-                        <option value="<?php echo esc_attr((string) $product['id']); ?>" <?php selected($old['product_id'], $product['id']); ?>>
-                            <?php
-                            $label = $product['title'];
-                            if ($product['price'] !== '') {
-                                $label .= ' - ' . Frontend::get_formatted_price((int) $product['price']);
-                            }
-                            echo esc_html($label);
-                            ?>
-                        </option>
-                    <?php endforeach; ?>
-                </select>
-            </p>
+                            <div class="col-12">
+                                <label for="product-id" class="form-label">Pilih Produk</label>
+                                <select id="product-id" name="product_id" class="form-select" required>
+                                    <option value="">Pilih produk</option>
+                                    <?php foreach ($products as $product) : ?>
+                                        <option value="<?php echo esc_attr((string) $product['id']); ?>" <?php selected($old['product_id'], $product['id']); ?>>
+                                            <?php
+                                            $label = $product['title'];
+                                            if ($product['price'] !== '') {
+                                                $label .= ' - ' . Frontend::get_formatted_price((int) $product['price']);
+                                            }
+                                            echo esc_html($label);
+                                            ?>
+                                        </option>
+                                    <?php endforeach; ?>
+                                </select>
+                            </div>
 
-            <p>
-                <label for="quantity"><strong>Jumlah</strong></label><br>
-                <input type="number" min="1" step="1" id="quantity" name="quantity" value="<?php echo esc_attr((string) $old['quantity']); ?>" required>
-            </p>
+                            <div class="col-12 col-md-4">
+                                <label for="quantity" class="form-label">Jumlah</label>
+                                <input type="number" min="1" step="1" id="quantity" name="quantity" class="form-control" value="<?php echo esc_attr((string) $old['quantity']); ?>" required>
+                            </div>
 
-            <p>
-                <label for="customer-name"><strong>Nama</strong></label><br>
-                <input type="text" id="customer-name" name="customer_name" value="<?php echo esc_attr($old['customer_name']); ?>" required style="width:100%;max-width:480px;">
-            </p>
+                            <div class="col-12 col-md-8">
+                                <label for="payment-method" class="form-label">Metode Pembayaran</label>
+                                <select id="payment-method" name="payment_method" class="form-select" required>
+                                    <option value="">Pilih metode pembayaran</option>
+                                    <?php foreach ($payment_methods as $value => $label) : ?>
+                                        <option value="<?php echo esc_attr($value); ?>" <?php selected($old['payment_method'], $value); ?>><?php echo esc_html($label); ?></option>
+                                    <?php endforeach; ?>
+                                </select>
+                            </div>
 
-            <p>
-                <label for="customer-phone"><strong>No. Telepon</strong></label><br>
-                <input type="text" id="customer-phone" name="customer_phone" value="<?php echo esc_attr($old['customer_phone']); ?>" required style="width:100%;max-width:480px;">
-            </p>
+                            <div class="col-12">
+                                <hr class="my-2">
+                                <h3 class="h5 mb-0">Data Konsumen</h3>
+                            </div>
 
-            <p>
-                <label for="customer-address"><strong>Alamat Lengkap</strong></label><br>
-                <textarea id="customer-address" name="customer_address" rows="4" required style="width:100%;max-width:480px;"><?php echo esc_textarea($old['customer_address']); ?></textarea>
-            </p>
+                            <div class="col-12 col-md-6">
+                                <label for="customer-name" class="form-label">Nama</label>
+                                <input type="text" id="customer-name" name="customer_name" class="form-control" value="<?php echo esc_attr($old['customer_name']); ?>" required>
+                            </div>
 
-            <p>
-                <label for="customer-gps"><strong>Titik GPS</strong></label><br>
-                <input type="text" id="customer-gps" name="customer_gps" value="<?php echo esc_attr($old['customer_gps']); ?>" placeholder="-6.200000, 106.816666" style="width:100%;max-width:480px;">
-            </p>
+                            <div class="col-12 col-md-6">
+                                <label for="customer-phone" class="form-label">No. Telepon</label>
+                                <input type="text" id="customer-phone" name="customer_phone" class="form-control" value="<?php echo esc_attr($old['customer_phone']); ?>" required>
+                            </div>
 
-            <p>
-                <label for="delivery-date"><strong>Tanggal Kirim</strong></label><br>
-                <input type="date" id="delivery-date" name="delivery_date" value="<?php echo esc_attr($old['delivery_date']); ?>" required>
-            </p>
+                            <div class="col-12">
+                                <label for="customer-address" class="form-label">Alamat Lengkap</label>
+                                <textarea id="customer-address" name="customer_address" rows="4" class="form-control" required><?php echo esc_textarea($old['customer_address']); ?></textarea>
+                            </div>
 
-            <p>
-                <label for="delivery-time"><strong>Jam Kirim</strong></label><br>
-                <input type="time" id="delivery-time" name="delivery_time" value="<?php echo esc_attr($old['delivery_time']); ?>" required>
-            </p>
+                            <div class="col-12">
+                                <label for="customer-gps" class="form-label">Titik GPS</label>
+                                <input type="text" id="customer-gps" name="customer_gps" class="form-control" value="<?php echo esc_attr($old['customer_gps']); ?>" placeholder="-6.200000, 106.816666">
+                                <div class="form-text">Isi koordinat lokasi untuk memudahkan kurir menemukan alamat.</div>
+                            </div>
 
-            <p>
-                <label for="payment-method"><strong>Metode Pembayaran</strong></label><br>
-                <select id="payment-method" name="payment_method" required>
-                    <option value="">Pilih metode pembayaran</option>
-                    <?php foreach ($payment_methods as $value => $label) : ?>
-                        <option value="<?php echo esc_attr($value); ?>" <?php selected($old['payment_method'], $value); ?>><?php echo esc_html($label); ?></option>
-                    <?php endforeach; ?>
-                </select>
-            </p>
+                            <div class="col-12">
+                                <hr class="my-2">
+                                <h3 class="h5 mb-0">Jadwal Pengiriman</h3>
+                            </div>
 
-            <p>
-                <button type="submit">Kirim Order</button>
-            </p>
-        </form>
-    <?php endif; ?>
+                            <div class="col-12 col-md-6">
+                                <label for="delivery-date" class="form-label">Tanggal Kirim</label>
+                                <input type="date" id="delivery-date" name="delivery_date" class="form-control" value="<?php echo esc_attr($old['delivery_date']); ?>" required>
+                            </div>
+
+                            <div class="col-12 col-md-6">
+                                <label for="delivery-time" class="form-label">Jam Kirim</label>
+                                <input type="time" id="delivery-time" name="delivery_time" class="form-control" value="<?php echo esc_attr($old['delivery_time']); ?>" required>
+                            </div>
+
+                            <div class="col-12 pt-2">
+                                <button type="submit" class="btn btn-primary btn-lg">Kirim Order</button>
+                            </div>
+                        </form>
+                    <?php endif; ?>
+                </div>
+            </div>
+        </div>
+    </div>
 </div>
