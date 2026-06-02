@@ -10,6 +10,9 @@ class OrderMetaBoxes
 {
   const NONCE_ACTION = 'custom_plugin_save_order_meta';
   const NONCE_NAME = 'custom_plugin_order_meta_nonce';
+  const LIST_NONCE_ACTION = 'custom_plugin_assign_courier_from_list';
+  const LIST_NONCE_NAME = 'custom_plugin_assign_courier_list_nonce';
+  const LIST_SCRIPT_HANDLE = 'custom-plugin-order-list';
 
   private $fields = array(
     'customer_name'       => 'text',
@@ -31,6 +34,8 @@ class OrderMetaBoxes
     add_action('save_post_order', array($this, 'save_order_meta'));
     add_filter('manage_order_posts_columns', array($this, 'filter_order_columns'));
     add_action('manage_order_posts_custom_column', array($this, 'render_order_column'), 10, 2);
+    add_action('admin_init', array($this, 'handle_list_assignment'));
+    add_action('admin_enqueue_scripts', array($this, 'enqueue_list_scripts'));
   }
 
   public function register_meta_boxes()
@@ -134,13 +139,21 @@ class OrderMetaBoxes
 
     if ($column === 'assigned_courier') {
       $courier_id = absint(get_post_meta($post_id, '_order_assigned_courier_id', true));
-      if ($courier_id < 1) {
-        echo '-';
-        return;
-      }
+      $couriers = get_users(array(
+        'role'    => Roles::COURIER_ROLE,
+        'orderby' => 'display_name',
+        'order'   => 'ASC',
+      ));
 
-      $courier = get_user_by('id', $courier_id);
-      echo $courier ? esc_html($courier->display_name) : '-';
+      echo '<div class="custom-plugin-order-courier" data-order-id="' . esc_attr((string) $post_id) . '">';
+      echo '<select name="assigned_courier_id" class="custom-plugin-courier-select">';
+      echo '<option value="">Pilih kurir</option>';
+      foreach ($couriers as $user) {
+        echo '<option value="' . esc_attr((string) $user->ID) . '" ' . selected((string) $courier_id, (string) $user->ID, false) . '>' . esc_html($user->display_name) . '</option>';
+      }
+      echo '</select> ';
+      echo '<button type="button" class="button button-small custom-plugin-courier-save">Simpan</button>';
+      echo '</div>';
       return;
     }
 
@@ -177,6 +190,65 @@ class OrderMetaBoxes
 
       update_post_meta($post_id, $meta_key, $value);
     }
+  }
+
+  public function handle_list_assignment()
+  {
+    if (!is_admin() || $_SERVER['REQUEST_METHOD'] !== 'POST') {
+      return;
+    }
+
+    if (!isset($_POST['custom_plugin_order_action']) || $_POST['custom_plugin_order_action'] !== 'assign_courier') {
+      return;
+    }
+
+    if (!isset($_POST[self::LIST_NONCE_NAME]) || !wp_verify_nonce(sanitize_text_field(wp_unslash($_POST[self::LIST_NONCE_NAME])), self::LIST_NONCE_ACTION)) {
+      return;
+    }
+
+    $order_id = isset($_POST['order_id']) ? absint($_POST['order_id']) : 0;
+    if ($order_id < 1 || !current_user_can('edit_post', $order_id)) {
+      return;
+    }
+
+    $courier_id = isset($_POST['assigned_courier_id']) ? absint($_POST['assigned_courier_id']) : 0;
+    $value = $this->sanitize_field_value('assigned_courier_id', 'user', (string) $courier_id);
+
+    if ($value === '') {
+      delete_post_meta($order_id, '_order_assigned_courier_id');
+    } else {
+      update_post_meta($order_id, '_order_assigned_courier_id', $value);
+    }
+
+    $redirect_url = add_query_arg(
+      array(
+        'post_type' => 'order',
+      ),
+      admin_url('edit.php')
+    );
+
+    wp_safe_redirect($redirect_url);
+    exit;
+  }
+
+  public function enqueue_list_scripts($hook)
+  {
+    if ($hook !== 'edit.php') {
+      return;
+    }
+
+    $post_type = isset($_GET['post_type']) ? sanitize_text_field(wp_unslash($_GET['post_type'])) : '';
+    if ($post_type !== 'order') {
+      return;
+    }
+
+    wp_register_script(self::LIST_SCRIPT_HANDLE, '', array(), CUSTOM_PLUGIN_VERSION, true);
+    wp_enqueue_script(self::LIST_SCRIPT_HANDLE);
+    wp_add_inline_script(
+      self::LIST_SCRIPT_HANDLE,
+      'document.addEventListener("DOMContentLoaded",function(){var items=document.querySelectorAll(".custom-plugin-order-courier");items.forEach(function(item){var button=item.querySelector(".custom-plugin-courier-save");var select=item.querySelector(".custom-plugin-courier-select");if(!button||!select){return;}button.addEventListener("click",function(){var form=document.createElement("form");form.method="post";form.action="";var fields={custom_plugin_order_action:"assign_courier",order_id:item.getAttribute("data-order-id"),assigned_courier_id:select.value,' . json_encode(self::LIST_NONCE_NAME) . ':' . json_encode(wp_create_nonce(self::LIST_NONCE_ACTION)) . '};Object.keys(fields).forEach(function(key){var input=document.createElement("input");input.type="hidden";input.name=key;input.value=fields[key];form.appendChild(input);});document.body.appendChild(form);form.submit();});});});',
+      'after'
+    );
   }
 
   private function can_save($post_id)
