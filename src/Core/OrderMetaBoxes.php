@@ -125,7 +125,14 @@ class OrderMetaBoxes
   {
     if ($column === 'order_status') {
       $status = get_post_meta($post_id, '_order_order_status', true);
-      echo esc_html($this->get_order_status_label($status));
+      echo '<div class="custom-plugin-order-list-field" data-order-id="' . esc_attr((string) $post_id) . '">';
+      echo '<select name="order_status" class="custom-plugin-order-status-select">';
+      foreach ($this->get_order_status_options() as $status_value => $status_label) {
+        echo '<option value="' . esc_attr($status_value) . '" ' . selected($status, $status_value, false) . '>' . esc_html($status_label) . '</option>';
+      }
+      echo '</select> ';
+      echo '<button type="button" class="button button-small custom-plugin-order-list-save" data-update-field="order_status">Simpan</button>';
+      echo '</div>';
       return;
     }
 
@@ -145,14 +152,14 @@ class OrderMetaBoxes
         'order'   => 'ASC',
       ));
 
-      echo '<div class="custom-plugin-order-courier" data-order-id="' . esc_attr((string) $post_id) . '">';
+      echo '<div class="custom-plugin-order-list-field" data-order-id="' . esc_attr((string) $post_id) . '">';
       echo '<select name="assigned_courier_id" class="custom-plugin-courier-select">';
       echo '<option value="">Pilih kurir</option>';
       foreach ($couriers as $user) {
         echo '<option value="' . esc_attr((string) $user->ID) . '" ' . selected((string) $courier_id, (string) $user->ID, false) . '>' . esc_html($user->display_name) . '</option>';
       }
       echo '</select> ';
-      echo '<button type="button" class="button button-small custom-plugin-courier-save">Simpan</button>';
+      echo '<button type="button" class="button button-small custom-plugin-order-list-save" data-update-field="assigned_courier_id">Simpan</button>';
       echo '</div>';
       return;
     }
@@ -198,7 +205,7 @@ class OrderMetaBoxes
       return;
     }
 
-    if (!isset($_POST['custom_plugin_order_action']) || $_POST['custom_plugin_order_action'] !== 'assign_courier') {
+    if (!isset($_POST['custom_plugin_order_action']) || $_POST['custom_plugin_order_action'] !== 'update_list_field') {
       return;
     }
 
@@ -211,13 +218,20 @@ class OrderMetaBoxes
       return;
     }
 
-    $courier_id = isset($_POST['assigned_courier_id']) ? absint($_POST['assigned_courier_id']) : 0;
-    $value = $this->sanitize_field_value('assigned_courier_id', 'user', (string) $courier_id);
+    $field_key = isset($_POST['field_key']) ? sanitize_key(wp_unslash($_POST['field_key'])) : '';
+    if (!in_array($field_key, array('assigned_courier_id', 'order_status'), true)) {
+      return;
+    }
+
+    $field_type = isset($this->fields[$field_key]) ? $this->fields[$field_key] : '';
+    $raw_value = isset($_POST[$field_key]) ? wp_unslash($_POST[$field_key]) : '';
+    $value = $this->sanitize_field_value($field_key, $field_type, $raw_value);
+    $meta_key = '_order_' . $field_key;
 
     if ($value === '') {
-      delete_post_meta($order_id, '_order_assigned_courier_id');
+      delete_post_meta($order_id, $meta_key);
     } else {
-      update_post_meta($order_id, '_order_assigned_courier_id', $value);
+      update_post_meta($order_id, $meta_key, $value);
     }
 
     $redirect_url = add_query_arg(
@@ -246,7 +260,7 @@ class OrderMetaBoxes
     wp_enqueue_script(self::LIST_SCRIPT_HANDLE);
     wp_add_inline_script(
       self::LIST_SCRIPT_HANDLE,
-      'document.addEventListener("DOMContentLoaded",function(){var items=document.querySelectorAll(".custom-plugin-order-courier");items.forEach(function(item){var button=item.querySelector(".custom-plugin-courier-save");var select=item.querySelector(".custom-plugin-courier-select");if(!button||!select){return;}button.addEventListener("click",function(){var form=document.createElement("form");form.method="post";form.action="";var fields={custom_plugin_order_action:"assign_courier",order_id:item.getAttribute("data-order-id"),assigned_courier_id:select.value,' . json_encode(self::LIST_NONCE_NAME) . ':' . json_encode(wp_create_nonce(self::LIST_NONCE_ACTION)) . '};Object.keys(fields).forEach(function(key){var input=document.createElement("input");input.type="hidden";input.name=key;input.value=fields[key];form.appendChild(input);});document.body.appendChild(form);form.submit();});});});',
+      'document.addEventListener("DOMContentLoaded",function(){var items=document.querySelectorAll(".custom-plugin-order-list-field");items.forEach(function(item){var button=item.querySelector(".custom-plugin-order-list-save");if(!button){return;}button.addEventListener("click",function(){var fieldKey=button.getAttribute("data-update-field");var field=item.querySelector("[name=\'"+fieldKey+"\']");if(!field){return;}var form=document.createElement("form");form.method="post";form.action="";var fields={custom_plugin_order_action:"update_list_field",order_id:item.getAttribute("data-order-id"),field_key:fieldKey,' . json_encode(self::LIST_NONCE_NAME) . ':' . json_encode(wp_create_nonce(self::LIST_NONCE_ACTION)) . '};fields[fieldKey]=field.value;Object.keys(fields).forEach(function(key){var input=document.createElement("input");input.type="hidden";input.name=key;input.value=fields[key];form.appendChild(input);});document.body.appendChild(form);form.submit();});});});',
       'after'
     );
   }
@@ -298,7 +312,7 @@ class OrderMetaBoxes
     }
 
     if ($field_key === 'order_status') {
-      $allowed = array('pending', 'scheduled', 'processing', 'delivering', 'delivered', 'completed', 'cancelled');
+      $allowed = array_keys($this->get_order_status_options());
       return in_array($raw_value, $allowed, true) ? $raw_value : '';
     }
 
@@ -322,7 +336,14 @@ class OrderMetaBoxes
 
   private function get_order_status_label($status)
   {
-    $labels = array(
+    $labels = $this->get_order_status_options();
+
+    return isset($labels[$status]) ? $labels[$status] : '-';
+  }
+
+  private function get_order_status_options()
+  {
+    return array(
       'pending'    => 'Pending',
       'scheduled'  => 'Terjadwal',
       'processing' => 'Diproses',
@@ -331,8 +352,6 @@ class OrderMetaBoxes
       'completed'  => 'Selesai',
       'cancelled'  => 'Dibatalkan',
     );
-
-    return isset($labels[$status]) ? $labels[$status] : '-';
   }
 
   private function render_text_row($label, $field_key, $value, $description = '', $type = 'text')
