@@ -34,15 +34,7 @@ class CourierDashboard
             return '<p>Halaman ini hanya tersedia untuk akun kurir.</p>';
         }
 
-        $orders = get_posts(array(
-            'post_type'      => 'order',
-            'post_status'    => array('publish', 'draft', 'pending', 'private'),
-            'posts_per_page' => 50,
-            'orderby'        => 'date',
-            'order'          => 'DESC',
-            'meta_key'       => '_order_assigned_courier_id',
-            'meta_value'     => (string) $current_user->ID,
-        ));
+        $orders = $this->get_assigned_orders($current_user->ID);
 
         $items = array();
         foreach ($orders as $order) {
@@ -69,8 +61,45 @@ class CourierDashboard
             'nonce_name'      => self::NONCE_NAME,
             'payment_labels'  => $this->get_payment_labels(),
             'status_labels'   => $this->get_status_labels(),
+            'courier_status_labels' => $this->get_courier_status_labels(),
             'feedback'        => $this->get_feedback_message(),
         ));
+    }
+
+    private function get_assigned_orders($courier_id)
+    {
+        global $wpdb;
+
+        $results = $wpdb->get_results(
+            $wpdb->prepare(
+                "SELECT posts.ID
+                FROM {$wpdb->posts} AS posts
+                INNER JOIN {$wpdb->postmeta} AS postmeta
+                    ON posts.ID = postmeta.post_id
+                WHERE posts.post_type = %s
+                    AND posts.post_status IN ('publish', 'draft', 'pending', 'private')
+                    AND postmeta.meta_key = %s
+                    AND postmeta.meta_value = %s
+                ORDER BY posts.post_date DESC",
+                'order',
+                '_order_assigned_courier_id',
+                (string) $courier_id
+            )
+        );
+
+        if (empty($results)) {
+            return array();
+        }
+
+        $orders = array();
+        foreach ($results as $result) {
+            $order = get_post((int) $result->ID);
+            if ($order instanceof \WP_Post) {
+                $orders[] = $order;
+            }
+        }
+
+        return $orders;
     }
 
     public function handle_form_submission()
@@ -102,8 +131,8 @@ class CourierDashboard
         }
 
         $status = isset($_POST['order_status']) ? sanitize_text_field(wp_unslash($_POST['order_status'])) : '';
-        if (!isset($this->get_status_labels()[$status])) {
-            $status = 'processing';
+        if (!isset($this->get_courier_status_labels()[$status])) {
+            $status = 'delivering';
         }
 
         update_post_meta($order_id, '_order_order_status', $status);
@@ -244,6 +273,14 @@ class CourierDashboard
             'delivered'  => 'Terkirim',
             'completed'  => 'Selesai',
             'cancelled'  => 'Dibatalkan',
+        );
+    }
+
+    private function get_courier_status_labels()
+    {
+        return array(
+            'delivering' => 'Dalam Pengiriman',
+            'delivered'  => 'Terkirim',
         );
     }
 }
