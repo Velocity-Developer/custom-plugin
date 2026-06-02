@@ -9,6 +9,7 @@ use CustomPlugin\Api\ExampleController;
 use CustomPlugin\Core\PostTypes;
 use CustomPlugin\Core\Taxonomies;
 use CustomPlugin\Core\CoreFeatures;
+use CustomPlugin\Core\Roles;
 
 if (!defined('ABSPATH')) {
   exit;
@@ -52,6 +53,7 @@ class Plugin
 
   public function activate()
   {
+    Roles::register_roles();
     add_option('custom_plugin_version', CUSTOM_PLUGIN_VERSION);
     flush_rewrite_rules();
   }
