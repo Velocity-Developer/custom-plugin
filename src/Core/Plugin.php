@@ -12,6 +12,7 @@ use CustomPlugin\Core\Taxonomies;
 use CustomPlugin\Core\CoreFeatures;
 use CustomPlugin\Core\Roles;
 use CustomPlugin\Core\OrderMetaBoxes;
+use CustomPlugin\Core\ProductMetaBoxes;
 
 if (!defined('ABSPATH')) {
   exit;
@@ -46,6 +47,7 @@ class Plugin
     new Taxonomies();
     new CoreFeatures();
     new OrderMetaBoxes();
+    new ProductMetaBoxes();
 
     // Example modules - uncomment to use or for reference
     new Admin();
