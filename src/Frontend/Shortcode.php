@@ -112,8 +112,8 @@ class Shortcode
         );
 
         $product_id = absint($atts['id']);
-        if ($product_id < 1 && get_post_type(get_the_ID()) === 'produk') {
-            $product_id = get_the_ID();
+        if ($product_id < 1) {
+            $product_id = $this->resolve_current_product_id();
         }
 
         if ($product_id < 1) {
@@ -126,6 +126,26 @@ class Shortcode
         }
 
         return esc_html($atts['before']) . Frontend::get_formatted_price((int) $price) . esc_html($atts['after']);
+    }
+
+    private function resolve_current_product_id()
+    {
+        $queried_object_id = get_queried_object_id();
+        if ($queried_object_id && get_post_type($queried_object_id) === 'produk') {
+            return (int) $queried_object_id;
+        }
+
+        $current_post_id = get_the_ID();
+        if ($current_post_id && get_post_type($current_post_id) === 'produk') {
+            return (int) $current_post_id;
+        }
+
+        global $post;
+        if ($post instanceof \WP_Post && $post->post_type === 'produk') {
+            return (int) $post->ID;
+        }
+
+        return 0;
     }
 
     public function handle_order_submission()
