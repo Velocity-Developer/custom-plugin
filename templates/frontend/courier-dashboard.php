@@ -103,11 +103,6 @@ if (!defined('ABSPATH')) {
                                                             <input type="file" id="delivery-proof-file-<?php echo esc_attr((string) $order['id']); ?>" name="delivery_proof_file" class="form-control" accept="image/*,.pdf">
                                                         </div>
 
-                                                        <div class="col-12">
-                                                            <label for="delivery-proof-url-<?php echo esc_attr((string) $order['id']); ?>" class="form-label">Atau URL Bukti Pengiriman</label>
-                                                            <input type="url" id="delivery-proof-url-<?php echo esc_attr((string) $order['id']); ?>" name="delivery_proof_url" class="form-control" value="<?php echo esc_attr($order['delivery_proof_url']); ?>">
-                                                        </div>
-
                                                         <?php if ($order['payment_method'] === 'cod') : ?>
                                                             <div class="col-12">
                                                                 <label for="cod-proof-file-<?php echo esc_attr((string) $order['id']); ?>" class="form-label">Upload Bukti Pembayaran COD</label>
