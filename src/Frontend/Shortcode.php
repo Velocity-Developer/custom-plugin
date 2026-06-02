@@ -17,12 +17,14 @@ if (!defined('ABSPATH')) {
 class Shortcode
 {
     const ORDER_SHORTCODE = 'custom_order_form';
+    const PRICE_SHORTCODE = 'custom_product_price';
     const ORDER_NONCE_ACTION = 'custom_plugin_submit_order';
     const ORDER_NONCE_NAME = 'custom_plugin_order_form_nonce';
 
     public function __construct()
     {
         add_shortcode(self::ORDER_SHORTCODE, array($this, 'order_form_shortcode'));
+        add_shortcode(self::PRICE_SHORTCODE, array($this, 'product_price_shortcode'));
         add_action('init', array($this, 'handle_order_submission'));
     }
 
@@ -87,6 +89,43 @@ class Shortcode
                 'cod'            => 'COD',
             ),
         ));
+    }
+
+    /**
+     * Shortcode: [custom_product_price id="123" before="" after=""]
+     *
+     * If `id` is not provided, it will try to use the current product post ID.
+     *
+     * @param array $atts
+     * @return string
+     */
+    public function product_price_shortcode($atts)
+    {
+        $atts = shortcode_atts(
+            array(
+                'id'     => 0,
+                'before' => '',
+                'after'  => '',
+            ),
+            $atts,
+            self::PRICE_SHORTCODE
+        );
+
+        $product_id = absint($atts['id']);
+        if ($product_id < 1 && get_post_type(get_the_ID()) === 'produk') {
+            $product_id = get_the_ID();
+        }
+
+        if ($product_id < 1) {
+            return '';
+        }
+
+        $price = get_post_meta($product_id, '_product_price', true);
+        if ($price === '') {
+            return '';
+        }
+
+        return esc_html($atts['before']) . Frontend::get_formatted_price((int) $price) . esc_html($atts['after']);
     }
 
     public function handle_order_submission()
