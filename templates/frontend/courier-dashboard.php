@@ -256,11 +256,6 @@ if (!function_exists('custom_plugin_courier_dashboard_status_badge_class')) {
                                                                     <label for="cod-proof-file-<?php echo esc_attr((string) $order['id']); ?>" class="form-label">Upload Bukti Pembayaran COD</label>
                                                                     <input type="file" id="cod-proof-file-<?php echo esc_attr((string) $order['id']); ?>" name="cod_payment_proof_file" class="form-control" accept="image/*,.pdf">
                                                                 </div>
-
-                                                                <div class="col-12">
-                                                                    <label for="cod-proof-url-<?php echo esc_attr((string) $order['id']); ?>" class="form-label">Atau URL Bukti Pembayaran COD</label>
-                                                                    <input type="url" id="cod-proof-url-<?php echo esc_attr((string) $order['id']); ?>" name="cod_payment_proof_url" class="form-control" value="<?php echo esc_attr($order['cod_payment_proof_url']); ?>">
-                                                                </div>
                                                             <?php endif; ?>
 
                                                             <div class="col-12 d-grid d-sm-flex justify-content-sm-end gap-2">

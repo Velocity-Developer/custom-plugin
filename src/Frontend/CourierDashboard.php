@@ -152,9 +152,8 @@ class CourierDashboard
         }
 
         $payment_method = get_post_meta($order_id, '_order_payment_method', true);
-        $cod_payment_proof_url = $this->handle_upload('cod_payment_proof_file', '_order_cod_payment_proof_url', $order_id);
-        if ($cod_payment_proof_url === false && $payment_method === 'cod' && isset($_POST['cod_payment_proof_url'])) {
-            update_post_meta($order_id, '_order_cod_payment_proof_url', esc_url_raw(wp_unslash($_POST['cod_payment_proof_url'])));
+        if ($payment_method === 'cod') {
+            $this->handle_upload('cod_payment_proof_file', '_order_cod_payment_proof_url', $order_id);
         }
 
         $this->redirect_with_feedback('updated');
