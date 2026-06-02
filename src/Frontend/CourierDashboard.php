@@ -14,6 +14,7 @@ class CourierDashboard
     const SHORTCODE = 'custom_courier_dashboard';
     const NONCE_ACTION = 'custom_plugin_courier_dashboard';
     const NONCE_NAME = 'custom_plugin_courier_nonce';
+    const LOCKED_STATUSES = array('pending', 'delivered', 'completed', 'cancelled');
 
     public function __construct()
     {
@@ -38,6 +39,8 @@ class CourierDashboard
 
         $items = array();
         foreach ($orders as $order) {
+            $order_status = get_post_meta($order->ID, '_order_order_status', true);
+
             $items[] = array(
                 'id'                    => $order->ID,
                 'title'                 => $order->post_title,
@@ -48,7 +51,8 @@ class CourierDashboard
                 'delivery_date'         => get_post_meta($order->ID, '_order_delivery_date', true),
                 'delivery_time'         => get_post_meta($order->ID, '_order_delivery_time', true),
                 'payment_method'        => get_post_meta($order->ID, '_order_payment_method', true),
-                'order_status'          => get_post_meta($order->ID, '_order_order_status', true),
+                'order_status'          => $order_status,
+                'can_edit'              => $this->can_courier_edit_status($order_status),
                 'delivery_proof_url'    => get_post_meta($order->ID, '_order_delivery_proof_url', true),
                 'cod_payment_proof_url' => get_post_meta($order->ID, '_order_cod_payment_proof_url', true),
             );
@@ -128,6 +132,11 @@ class CourierDashboard
         $order_id = isset($_POST['order_id']) ? absint($_POST['order_id']) : 0;
         if ($order_id < 1 || !$this->is_order_assigned_to_courier($order_id, $current_user->ID)) {
             $this->redirect_with_feedback('invalid');
+        }
+
+        $current_status = get_post_meta($order_id, '_order_order_status', true);
+        if (!$this->can_courier_edit_status($current_status)) {
+            $this->redirect_with_feedback('locked');
         }
 
         $status = isset($_POST['order_status']) ? sanitize_text_field(wp_unslash($_POST['order_status'])) : '';
@@ -251,6 +260,10 @@ class CourierDashboard
             return 'Order tidak valid atau bukan milik kurir ini.';
         }
 
+        if ($status === 'locked') {
+            return 'Order dengan status ini tidak bisa diedit oleh kurir.';
+        }
+
         return '';
     }
 
@@ -282,5 +295,10 @@ class CourierDashboard
             'delivering' => 'Dalam Pengiriman',
             'delivered'  => 'Terkirim',
         );
+    }
+
+    private function can_courier_edit_status($status)
+    {
+        return !in_array($status, self::LOCKED_STATUSES, true);
     }
 }

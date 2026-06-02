@@ -22,6 +22,28 @@ if (!function_exists('custom_plugin_courier_dashboard_status_badge_class')) {
 }
 ?>
 <div class="custom-plugin-courier-dashboard container py-4">
+    <style>
+        .custom-plugin-courier-dashboard .courier-mobile-order-card {
+            border-radius: 0.5rem;
+        }
+
+        .custom-plugin-courier-dashboard .courier-proof-preview img {
+            max-height: 360px;
+            object-fit: contain;
+        }
+
+        @media (max-width: 575.98px) {
+            .custom-plugin-courier-dashboard {
+                padding-left: 0.75rem;
+                padding-right: 0.75rem;
+            }
+
+            .custom-plugin-courier-dashboard .courier-proof-preview img {
+                max-height: 260px;
+            }
+        }
+    </style>
+
     <div class="row justify-content-center">
         <div class="col-12">
             <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-end gap-3 mb-4">
@@ -43,7 +65,7 @@ if (!function_exists('custom_plugin_courier_dashboard_status_badge_class')) {
                     Belum ada order yang ditugaskan.
                 </div>
             <?php else : ?>
-                <div class="card shadow-sm border-0">
+                <div class="card shadow-sm border-0 d-none d-md-block">
                     <div class="table-responsive">
                         <table class="table align-middle mb-0">
                             <thead class="table-light">
@@ -77,9 +99,13 @@ if (!function_exists('custom_plugin_courier_dashboard_status_badge_class')) {
                                         <td><span class="badge text-bg-light border"><?php echo esc_html(isset($payment_labels[$order['payment_method']]) ? $payment_labels[$order['payment_method']] : '-'); ?></span></td>
                                         <td><span class="badge <?php echo esc_attr($status_badge_class); ?>"><?php echo esc_html(isset($status_labels[$order['order_status']]) ? $status_labels[$order['order_status']] : '-'); ?></span></td>
                                         <td class="text-end">
-                                            <button type="button" class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#<?php echo esc_attr($modal_id); ?>">
-                                                Edit
-                                            </button>
+                                            <?php if (!empty($order['can_edit'])) : ?>
+                                                <button type="button" class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#<?php echo esc_attr($modal_id); ?>">
+                                                    Edit
+                                                </button>
+                                            <?php else : ?>
+                                                <span class="text-body-secondary small">Terkunci</span>
+                                            <?php endif; ?>
                                         </td>
                                     </tr>
                                 <?php endforeach; ?>
@@ -88,10 +114,57 @@ if (!function_exists('custom_plugin_courier_dashboard_status_badge_class')) {
                     </div>
                 </div>
 
+                <div class="d-md-none">
+                    <div class="vstack gap-3">
+                        <?php foreach ($orders as $order) : ?>
+                            <?php
+                            $modal_id = 'courier-order-modal-' . $order['id'];
+                            $status_badge_class = custom_plugin_courier_dashboard_status_badge_class($order['order_status']);
+                            $delivery_schedule = trim($order['delivery_date'] . ' ' . $order['delivery_time']);
+                            ?>
+                            <section class="card courier-mobile-order-card shadow-sm border-0">
+                                <div class="card-body p-3">
+                                    <div class="d-flex justify-content-between align-items-start gap-3 mb-3">
+                                        <div class="min-w-0">
+                                            <h3 class="h6 mb-1"><?php echo esc_html($order['title'] !== '' ? $order['title'] : 'Order #' . $order['id']); ?></h3>
+                                            <div class="text-body-secondary small">ID #<?php echo esc_html((string) $order['id']); ?></div>
+                                        </div>
+                                        <span class="badge <?php echo esc_attr($status_badge_class); ?> flex-shrink-0"><?php echo esc_html(isset($status_labels[$order['order_status']]) ? $status_labels[$order['order_status']] : '-'); ?></span>
+                                    </div>
+
+                                    <dl class="row small mb-3 gy-2">
+                                        <dt class="col-4 text-body-secondary fw-normal">Customer</dt>
+                                        <dd class="col-8 mb-0 text-end"><?php echo esc_html($order['customer_name'] !== '' ? $order['customer_name'] : '-'); ?></dd>
+
+                                        <dt class="col-4 text-body-secondary fw-normal">Telepon</dt>
+                                        <dd class="col-8 mb-0 text-end"><?php echo esc_html($order['customer_phone'] !== '' ? $order['customer_phone'] : '-'); ?></dd>
+
+                                        <dt class="col-4 text-body-secondary fw-normal">Jadwal</dt>
+                                        <dd class="col-8 mb-0 text-end"><?php echo esc_html($delivery_schedule !== '' ? $delivery_schedule : '-'); ?></dd>
+
+                                        <dt class="col-4 text-body-secondary fw-normal">Bayar</dt>
+                                        <dd class="col-8 mb-0 text-end"><?php echo esc_html(isset($payment_labels[$order['payment_method']]) ? $payment_labels[$order['payment_method']] : '-'); ?></dd>
+                                    </dl>
+
+                                    <?php if (!empty($order['can_edit'])) : ?>
+                                        <button type="button" class="btn btn-primary w-100" data-bs-toggle="modal" data-bs-target="#<?php echo esc_attr($modal_id); ?>">
+                                            Edit Order
+                                        </button>
+                                    <?php else : ?>
+                                        <button type="button" class="btn btn-outline-secondary w-100" disabled>
+                                            Tidak Bisa Diedit
+                                        </button>
+                                    <?php endif; ?>
+                                </div>
+                            </section>
+                        <?php endforeach; ?>
+                    </div>
+                </div>
+
                 <?php foreach ($orders as $order) : ?>
                     <?php $modal_id = 'courier-order-modal-' . $order['id']; ?>
                     <div class="modal fade" id="<?php echo esc_attr($modal_id); ?>" tabindex="-1" aria-labelledby="<?php echo esc_attr($modal_id); ?>-label" aria-hidden="true">
-                        <div class="modal-dialog modal-lg modal-dialog-scrollable">
+                        <div class="modal-dialog modal-lg modal-dialog-scrollable modal-fullscreen-sm-down">
                             <div class="modal-content">
                                 <div class="modal-header">
                                     <div>
@@ -128,11 +201,11 @@ if (!function_exists('custom_plugin_courier_dashboard_status_badge_class')) {
 
                                                     <?php if (!empty($order['delivery_proof_url'])) : ?>
                                                         <div class="mt-3">
-                                                            <div class="border rounded overflow-hidden bg-white">
+                                                            <div class="courier-proof-preview border rounded overflow-hidden bg-white text-center">
                                                                 <img
                                                                     src="<?php echo esc_url($order['delivery_proof_url']); ?>"
                                                                     alt="Preview bukti pengiriman"
-                                                                    class="img-fluid w-100"
+                                                                    class="img-fluid"
                                                                     loading="lazy">
                                                             </div>
                                                         </div>
@@ -140,11 +213,11 @@ if (!function_exists('custom_plugin_courier_dashboard_status_badge_class')) {
 
                                                     <?php if (!empty($order['cod_payment_proof_url'])) : ?>
                                                         <div class="mt-3">
-                                                            <div class="border rounded overflow-hidden bg-white">
+                                                            <div class="courier-proof-preview border rounded overflow-hidden bg-white text-center">
                                                                 <img
                                                                     src="<?php echo esc_url($order['cod_payment_proof_url']); ?>"
                                                                     alt="Preview bukti pembayaran COD"
-                                                                    class="img-fluid w-100"
+                                                                    class="img-fluid"
                                                                     loading="lazy">
                                                             </div>
                                                         </div>
@@ -153,50 +226,52 @@ if (!function_exists('custom_plugin_courier_dashboard_status_badge_class')) {
                                             </div>
                                         </div>
 
-                                        <div class="col-12 col-lg-7">
-                                            <div class="card border-0 bg-body-tertiary h-100">
-                                                <div class="card-body">
-                                                    <h6 class="mb-3">Update Pengiriman</h6>
+                                        <?php if (!empty($order['can_edit'])) : ?>
+                                            <div class="col-12 col-lg-7">
+                                                <div class="card border-0 bg-body-tertiary h-100">
+                                                    <div class="card-body">
+                                                        <h6 class="mb-3">Update Pengiriman</h6>
 
-                                                    <form method="post" enctype="multipart/form-data" class="row g-3">
-                                                        <?php wp_nonce_field($nonce_action, $nonce_name); ?>
-                                                        <input type="hidden" name="custom_plugin_courier_action" value="update_order">
-                                                        <input type="hidden" name="order_id" value="<?php echo esc_attr((string) $order['id']); ?>">
+                                                        <form method="post" enctype="multipart/form-data" class="row g-3">
+                                                            <?php wp_nonce_field($nonce_action, $nonce_name); ?>
+                                                            <input type="hidden" name="custom_plugin_courier_action" value="update_order">
+                                                            <input type="hidden" name="order_id" value="<?php echo esc_attr((string) $order['id']); ?>">
 
-                                                        <div class="col-12">
-                                                            <label for="order-status-<?php echo esc_attr((string) $order['id']); ?>" class="form-label">Update Status</label>
-                                                            <select id="order-status-<?php echo esc_attr((string) $order['id']); ?>" name="order_status" class="form-select">
-                                                                <?php foreach ($courier_status_labels as $status_value => $status_label) : ?>
-                                                                    <option value="<?php echo esc_attr($status_value); ?>" <?php selected($order['order_status'], $status_value); ?>><?php echo esc_html($status_label); ?></option>
-                                                                <?php endforeach; ?>
-                                                            </select>
-                                                        </div>
-
-                                                        <div class="col-12">
-                                                            <label for="delivery-proof-file-<?php echo esc_attr((string) $order['id']); ?>" class="form-label">Upload Bukti Pengiriman</label>
-                                                            <input type="file" id="delivery-proof-file-<?php echo esc_attr((string) $order['id']); ?>" name="delivery_proof_file" class="form-control" accept="image/*,.pdf">
-                                                        </div>
-
-                                                        <?php if ($order['payment_method'] === 'cod') : ?>
                                                             <div class="col-12">
-                                                                <label for="cod-proof-file-<?php echo esc_attr((string) $order['id']); ?>" class="form-label">Upload Bukti Pembayaran COD</label>
-                                                                <input type="file" id="cod-proof-file-<?php echo esc_attr((string) $order['id']); ?>" name="cod_payment_proof_file" class="form-control" accept="image/*,.pdf">
+                                                                <label for="order-status-<?php echo esc_attr((string) $order['id']); ?>" class="form-label">Update Status</label>
+                                                                <select id="order-status-<?php echo esc_attr((string) $order['id']); ?>" name="order_status" class="form-select">
+                                                                    <?php foreach ($courier_status_labels as $status_value => $status_label) : ?>
+                                                                        <option value="<?php echo esc_attr($status_value); ?>" <?php selected($order['order_status'], $status_value); ?>><?php echo esc_html($status_label); ?></option>
+                                                                    <?php endforeach; ?>
+                                                                </select>
                                                             </div>
 
                                                             <div class="col-12">
-                                                                <label for="cod-proof-url-<?php echo esc_attr((string) $order['id']); ?>" class="form-label">Atau URL Bukti Pembayaran COD</label>
-                                                                <input type="url" id="cod-proof-url-<?php echo esc_attr((string) $order['id']); ?>" name="cod_payment_proof_url" class="form-control" value="<?php echo esc_attr($order['cod_payment_proof_url']); ?>">
+                                                                <label for="delivery-proof-file-<?php echo esc_attr((string) $order['id']); ?>" class="form-label">Upload Bukti Pengiriman</label>
+                                                                <input type="file" id="delivery-proof-file-<?php echo esc_attr((string) $order['id']); ?>" name="delivery_proof_file" class="form-control" accept="image/*,.pdf">
                                                             </div>
-                                                        <?php endif; ?>
 
-                                                        <div class="col-12 d-flex justify-content-end gap-2">
-                                                            <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Batal</button>
-                                                            <button type="submit" class="btn btn-primary">Simpan Update</button>
-                                                        </div>
-                                                    </form>
+                                                            <?php if ($order['payment_method'] === 'cod') : ?>
+                                                                <div class="col-12">
+                                                                    <label for="cod-proof-file-<?php echo esc_attr((string) $order['id']); ?>" class="form-label">Upload Bukti Pembayaran COD</label>
+                                                                    <input type="file" id="cod-proof-file-<?php echo esc_attr((string) $order['id']); ?>" name="cod_payment_proof_file" class="form-control" accept="image/*,.pdf">
+                                                                </div>
+
+                                                                <div class="col-12">
+                                                                    <label for="cod-proof-url-<?php echo esc_attr((string) $order['id']); ?>" class="form-label">Atau URL Bukti Pembayaran COD</label>
+                                                                    <input type="url" id="cod-proof-url-<?php echo esc_attr((string) $order['id']); ?>" name="cod_payment_proof_url" class="form-control" value="<?php echo esc_attr($order['cod_payment_proof_url']); ?>">
+                                                                </div>
+                                                            <?php endif; ?>
+
+                                                            <div class="col-12 d-grid d-sm-flex justify-content-sm-end gap-2">
+                                                                <button type="button" class="btn btn-outline-secondary order-2 order-sm-1" data-bs-dismiss="modal">Batal</button>
+                                                                <button type="submit" class="btn btn-primary order-1 order-sm-2">Simpan Update</button>
+                                                            </div>
+                                                        </form>
+                                                    </div>
                                                 </div>
                                             </div>
-                                        </div>
+                                        <?php endif; ?>
                                     </div>
                                 </div>
                             </div>
