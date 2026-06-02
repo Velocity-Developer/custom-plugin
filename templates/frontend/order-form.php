@@ -7,6 +7,23 @@ if (!defined('ABSPATH')) {
 }
 ?>
 <div class="custom-plugin-order-form container py-4">
+    <style>
+        .custom-plugin-order-form .custom-plugin-submit-order-btn {
+            --bs-btn-color: #fff;
+            --bs-btn-bg: #F83C89;
+            --bs-btn-border-color: #F83C89;
+            --bs-btn-hover-color: #fff;
+            --bs-btn-hover-bg: #e2357c;
+            --bs-btn-hover-border-color: #e2357c;
+            --bs-btn-focus-shadow-rgb: 248, 60, 137;
+            --bs-btn-active-color: #fff;
+            --bs-btn-active-bg: #d82f73;
+            --bs-btn-active-border-color: #d82f73;
+            --bs-btn-disabled-color: #fff;
+            --bs-btn-disabled-bg: #F83C89;
+            --bs-btn-disabled-border-color: #F83C89;
+        }
+    </style>
     <div class="row justify-content-center">
         <div class="col-12 col-lg-8">
             <div class="card shadow-sm border-0">
@@ -131,7 +148,7 @@ if (!defined('ABSPATH')) {
                             </div>
 
                             <div class="col-12 pt-2">
-                                <button type="submit" class="btn btn-primary btn-lg">Kirim Order</button>
+                                <button type="submit" class="btn btn-lg custom-plugin-submit-order-btn">Kirim Order</button>
                             </div>
                         </form>
                     <?php endif; ?>
