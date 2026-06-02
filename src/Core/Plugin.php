@@ -10,6 +10,7 @@ use CustomPlugin\Core\PostTypes;
 use CustomPlugin\Core\Taxonomies;
 use CustomPlugin\Core\CoreFeatures;
 use CustomPlugin\Core\Roles;
+use CustomPlugin\Core\OrderMetaBoxes;
 
 if (!defined('ABSPATH')) {
   exit;
@@ -43,6 +44,7 @@ class Plugin
     new PostTypes();
     new Taxonomies();
     new CoreFeatures();
+    new OrderMetaBoxes();
 
     // Example modules - uncomment to use or for reference
     // new Admin();
