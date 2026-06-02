@@ -65,6 +65,24 @@ if (!defined('ABSPATH')) {
                             </div>
 
                             <div class="col-12">
+                                <div class="alert alert-light border mb-0" role="alert">
+                                    <div class="fw-semibold mb-2">Informasi Pembayaran</div>
+                                    <?php if (!empty($store_settings['bank_name']) || !empty($store_settings['bank_account_number'])) : ?>
+                                        <div class="mb-2">
+                                            <div>Bank: <?php echo esc_html($store_settings['bank_name'] !== '' ? $store_settings['bank_name'] : '-'); ?></div>
+                                            <div>Rekening: <?php echo esc_html($store_settings['bank_account_number'] !== '' ? $store_settings['bank_account_number'] : '-'); ?></div>
+                                            <div>Atas Nama: <?php echo esc_html($store_settings['bank_account_name'] !== '' ? $store_settings['bank_account_name'] : '-'); ?></div>
+                                        </div>
+                                    <?php endif; ?>
+                                    <?php if (!empty($store_settings['qris_image_id'])) : ?>
+                                        <div>
+                                            <?php echo wp_get_attachment_image((int) $store_settings['qris_image_id'], 'medium', false, array('class' => 'img-fluid rounded border', 'alt' => 'QRIS')); ?>
+                                        </div>
+                                    <?php endif; ?>
+                                </div>
+                            </div>
+
+                            <div class="col-12">
                                 <hr class="my-2">
                                 <h3 class="h5 mb-0">Data Konsumen</h3>
                             </div>
@@ -86,8 +104,11 @@ if (!defined('ABSPATH')) {
 
                             <div class="col-12">
                                 <label for="customer-gps" class="form-label">Titik GPS</label>
-                                <input type="text" id="customer-gps" name="customer_gps" class="form-control" value="<?php echo esc_attr($old['customer_gps']); ?>" placeholder="-6.200000, 106.816666">
-                                <div class="form-text">Isi koordinat lokasi untuk memudahkan kurir menemukan alamat.</div>
+                                <div class="input-group">
+                                    <input type="text" id="customer-gps" name="customer_gps" class="form-control" value="<?php echo esc_attr($old['customer_gps']); ?>" placeholder="-6.200000, 106.816666">
+                                    <button type="button" class="btn btn-outline-secondary" id="detect-location-button">Gunakan Lokasi Saya</button>
+                                </div>
+                                <div class="form-text" id="location-help-text">Browser akan meminta izin akses lokasi untuk mengisi koordinat otomatis.</div>
                             </div>
 
                             <div class="col-12">
@@ -115,3 +136,37 @@ if (!defined('ABSPATH')) {
         </div>
     </div>
 </div>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        var button = document.getElementById('detect-location-button');
+        var gpsField = document.getElementById('customer-gps');
+        var helpText = document.getElementById('location-help-text');
+
+        if (!button || !gpsField || !helpText) {
+            return;
+        }
+
+        button.addEventListener('click', function() {
+            if (!navigator.geolocation) {
+                helpText.textContent = 'Browser ini tidak mendukung akses lokasi.';
+                return;
+            }
+
+            button.disabled = true;
+            helpText.textContent = 'Meminta izin akses lokasi dan mengambil koordinat...';
+
+            navigator.geolocation.getCurrentPosition(function(position) {
+                gpsField.value = position.coords.latitude.toFixed(6) + ', ' + position.coords.longitude.toFixed(6);
+                helpText.textContent = 'Koordinat berhasil diisi otomatis.';
+                button.disabled = false;
+            }, function() {
+                helpText.textContent = 'Izin lokasi ditolak atau koordinat tidak bisa diambil. Silakan isi manual.';
+                button.disabled = false;
+            }, {
+                enableHighAccuracy: true,
+                timeout: 10000,
+                maximumAge: 0
+            });
+        });
+    });
+</script>

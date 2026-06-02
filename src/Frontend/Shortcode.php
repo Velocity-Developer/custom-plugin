@@ -2,6 +2,7 @@
 
 namespace CustomPlugin\Frontend;
 
+use CustomPlugin\Admin\Admin;
 use CustomPlugin\Core\Template;
 
 if (!defined('ABSPATH')) {
@@ -79,9 +80,10 @@ class Shortcode
             'nonce_name'    => self::ORDER_NONCE_NAME,
             'feedback'      => $this->get_feedback_message(),
             'old'           => $this->get_old_input(),
+            'store_settings' => Admin::get_store_settings(),
             'payment_methods' => array(
                 'bank_transfer'  => 'Transfer Bank',
-                'digital_wallet' => 'Transfer Dompet Digital',
+                'digital_wallet' => 'QRIS / Dompet Digital',
                 'cod'            => 'COD',
             ),
         ));
