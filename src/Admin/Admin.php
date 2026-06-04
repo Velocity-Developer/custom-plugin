@@ -17,10 +17,14 @@ if (!defined('ABSPATH')) {
 class Admin
 {
     const MENU_SLUG = 'custom-plugin-couriers';
+    const CUSTOMER_MENU_SLUG = 'custom-plugin-customers';
     const STORE_MENU_SLUG = 'custom-plugin-store-settings';
     const CREATE_NONCE_ACTION = 'custom_plugin_create_courier';
     const CREATE_NONCE_NAME = 'custom_plugin_create_courier_nonce';
     const DELETE_NONCE_ACTION = 'custom_plugin_delete_courier_';
+    const CREATE_CUSTOMER_NONCE_ACTION = 'custom_plugin_create_customer';
+    const CREATE_CUSTOMER_NONCE_NAME = 'custom_plugin_create_customer_nonce';
+    const DELETE_CUSTOMER_NONCE_ACTION = 'custom_plugin_delete_customer_';
     const STORE_NONCE_ACTION = 'custom_plugin_save_store_settings';
     const STORE_NONCE_NAME = 'custom_plugin_store_settings_nonce';
     const STORE_OPTION_KEY = 'custom_plugin_store_settings';
@@ -52,6 +56,14 @@ class Admin
             'manage_options',
             self::MENU_SLUG,
             array($this, 'admin_page')
+        );
+
+        add_users_page(
+            __('Kelola Customer', 'custom-plugin'),
+            __('Kelola Customer', 'custom-plugin'),
+            'manage_options',
+            self::CUSTOMER_MENU_SLUG,
+            array($this, 'customer_admin_page')
         );
     }
 
@@ -156,6 +168,38 @@ JS;
         ));
     }
 
+    public function customer_admin_page()
+    {
+        if (!current_user_can('manage_options')) {
+            wp_die(esc_html__('Anda tidak memiliki akses ke halaman ini.', 'custom-plugin'));
+        }
+
+        $customers = get_users(array(
+            'role'    => Roles::CUSTOMER_ROLE,
+            'orderby' => 'display_name',
+            'order'   => 'ASC',
+        ));
+
+        $items = array();
+        foreach ($customers as $customer) {
+            $city_value = (string) get_user_meta($customer->ID, '_customer_city', true);
+
+            $items[] = array(
+                'id'           => $customer->ID,
+                'display_name' => $customer->display_name,
+                'username'     => $customer->user_login,
+                'email'        => $customer->user_email,
+                'city'         => $this->get_customer_city_label($city_value),
+            );
+        }
+
+        Template::render('admin/customer-management', array(
+            'customers'    => $items,
+            'city_options' => $this->get_customer_city_options(),
+            'feedback'     => $this->get_feedback_message(),
+        ));
+    }
+
     public function handle_actions()
     {
         if (!current_user_can('manage_options')) {
@@ -171,6 +215,18 @@ JS;
         if ($page === self::STORE_MENU_SLUG) {
             if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['custom_plugin_admin_action']) && $_POST['custom_plugin_admin_action'] === 'save_store_settings') {
                 $this->handle_save_store_settings();
+            }
+            return;
+        }
+
+        if ($page === self::CUSTOMER_MENU_SLUG) {
+            if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['custom_plugin_admin_action']) && $_POST['custom_plugin_admin_action'] === 'create_customer') {
+                $this->handle_create_customer();
+                return;
+            }
+
+            if (isset($_GET['action'], $_GET['customer_id']) && $_GET['action'] === 'delete_customer') {
+                $this->handle_delete_customer();
             }
             return;
         }
@@ -297,6 +353,76 @@ JS;
         $this->redirect_with_feedback('deleted', self::MENU_SLUG, admin_url('users.php'));
     }
 
+    private function handle_create_customer()
+    {
+        if (!isset($_POST[self::CREATE_CUSTOMER_NONCE_NAME]) || !wp_verify_nonce(sanitize_text_field(wp_unslash($_POST[self::CREATE_CUSTOMER_NONCE_NAME])), self::CREATE_CUSTOMER_NONCE_ACTION)) {
+            $this->redirect_with_feedback('nonce_error', self::CUSTOMER_MENU_SLUG, admin_url('users.php'));
+        }
+
+        $full_name = isset($_POST['customer_full_name']) ? sanitize_text_field(wp_unslash($_POST['customer_full_name'])) : '';
+        $email = isset($_POST['customer_email']) ? sanitize_email(wp_unslash($_POST['customer_email'])) : '';
+        $password = isset($_POST['customer_password']) ? wp_unslash($_POST['customer_password']) : '';
+        $city = isset($_POST['customer_city']) ? sanitize_text_field(wp_unslash($_POST['customer_city'])) : '';
+        $city_values = wp_list_pluck($this->get_customer_city_options(), 'value');
+
+        if ($full_name === '' || $email === '' || $password === '' || $city === '' || !in_array($city, $city_values, true)) {
+            $this->redirect_with_feedback('customer_missing_fields', self::CUSTOMER_MENU_SLUG, admin_url('users.php'));
+        }
+
+        if (!is_email($email)) {
+            $this->redirect_with_feedback('customer_invalid_email', self::CUSTOMER_MENU_SLUG, admin_url('users.php'));
+        }
+
+        if (email_exists($email)) {
+            $this->redirect_with_feedback('customer_exists', self::CUSTOMER_MENU_SLUG, admin_url('users.php'));
+        }
+
+        $username = $this->generate_customer_username($email);
+        $user_id = wp_insert_user(array(
+            'user_login'   => $username,
+            'user_email'   => $email,
+            'display_name' => $full_name,
+            'user_pass'    => $password,
+            'role'         => Roles::CUSTOMER_ROLE,
+        ));
+
+        if (is_wp_error($user_id)) {
+            $this->redirect_with_feedback('customer_create_failed', self::CUSTOMER_MENU_SLUG, admin_url('users.php'));
+        }
+
+        update_user_meta($user_id, '_customer_full_name', $full_name);
+        update_user_meta($user_id, '_customer_city', $city);
+
+        $this->redirect_with_feedback('customer_created', self::CUSTOMER_MENU_SLUG, admin_url('users.php'));
+    }
+
+    private function handle_delete_customer()
+    {
+        $customer_id = absint($_GET['customer_id']);
+        if ($customer_id < 1) {
+            $this->redirect_with_feedback('customer_invalid', self::CUSTOMER_MENU_SLUG, admin_url('users.php'));
+        }
+
+        $nonce = isset($_GET['_wpnonce']) ? sanitize_text_field(wp_unslash($_GET['_wpnonce'])) : '';
+        if (!wp_verify_nonce($nonce, self::DELETE_CUSTOMER_NONCE_ACTION . $customer_id)) {
+            $this->redirect_with_feedback('nonce_error', self::CUSTOMER_MENU_SLUG, admin_url('users.php'));
+        }
+
+        $customer = get_user_by('id', $customer_id);
+        if (!$customer || !in_array(Roles::CUSTOMER_ROLE, (array) $customer->roles, true)) {
+            $this->redirect_with_feedback('customer_invalid', self::CUSTOMER_MENU_SLUG, admin_url('users.php'));
+        }
+
+        require_once ABSPATH . 'wp-admin/includes/user.php';
+        $deleted = wp_delete_user($customer_id);
+
+        if (!$deleted) {
+            $this->redirect_with_feedback('customer_delete_failed', self::CUSTOMER_MENU_SLUG, admin_url('users.php'));
+        }
+
+        $this->redirect_with_feedback('customer_deleted', self::CUSTOMER_MENU_SLUG, admin_url('users.php'));
+    }
+
     private function redirect_with_feedback($status, $page, $base_url)
     {
         $url = add_query_arg(
@@ -352,8 +478,74 @@ JS;
             'nonce_error'   => 'Permintaan tidak valid. Silakan coba lagi.',
             'create_failed' => 'Kurir gagal dibuat.',
             'delete_failed' => 'Kurir gagal dihapus.',
+            'customer_created' => 'Customer berhasil ditambahkan.',
+            'customer_deleted' => 'Customer berhasil dihapus.',
+            'customer_missing_fields' => 'Nama, email, password, dan kota wajib diisi.',
+            'customer_invalid_email' => 'Email customer tidak valid.',
+            'customer_exists' => 'Email customer sudah digunakan.',
+            'customer_invalid' => 'Data customer tidak valid.',
+            'customer_create_failed' => 'Customer gagal dibuat.',
+            'customer_delete_failed' => 'Customer gagal dihapus.',
         );
 
         return isset($messages[$status]) ? $messages[$status] : '';
+    }
+
+    private function get_customer_city_options()
+    {
+        return array(
+            array(
+                'value' => 'kota-gorontalo',
+                'label' => 'Kota Gorontalo',
+            ),
+            array(
+                'value' => 'kabupaten-gorontalo',
+                'label' => 'Kabupaten Gorontalo',
+            ),
+            array(
+                'value' => 'kabupaten-gorontalo-utara',
+                'label' => 'Kabupaten Gorontalo Utara',
+            ),
+            array(
+                'value' => 'kabupaten-boalemo',
+                'label' => 'Kabupaten Boalemo',
+            ),
+            array(
+                'value' => 'kabupaten-pohuwato',
+                'label' => 'Kabupaten Pohuwato',
+            ),
+            array(
+                'value' => 'kabupaten-bone-bolango',
+                'label' => 'Kabupaten Bone Bolango',
+            ),
+        );
+    }
+
+    private function get_customer_city_label($value)
+    {
+        foreach ($this->get_customer_city_options() as $city) {
+            if ($city['value'] === $value) {
+                return $city['label'];
+            }
+        }
+
+        return '';
+    }
+
+    private function generate_customer_username($email)
+    {
+        $base = sanitize_user(current(explode('@', $email)), true);
+        if ($base === '') {
+            $base = 'customer';
+        }
+
+        $username = $base;
+        $suffix = 1;
+        while (username_exists($username)) {
+            $username = $base . $suffix;
+            $suffix++;
+        }
+
+        return $username;
     }
 }
