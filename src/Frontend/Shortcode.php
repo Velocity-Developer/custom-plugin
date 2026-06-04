@@ -19,15 +19,22 @@ class Shortcode
     const ORDER_SHORTCODE = 'custom_order_form';
     const PRICE_SHORTCODE = 'custom_product_price';
     const BUY_BUTTON_SHORTCODE = 'custom_buy_button';
+    const CUSTOMER_REGISTRATION_SHORTCODE = 'custom_customer_registration';
+    const CUSTOMER_PROFILE_SHORTCODE = 'custom_customer_profile';
     const ORDER_NONCE_ACTION = 'custom_plugin_submit_order';
     const ORDER_NONCE_NAME = 'custom_plugin_order_form_nonce';
+    const CUSTOMER_NONCE_ACTION = 'custom_plugin_submit_customer_profile';
+    const CUSTOMER_NONCE_NAME = 'custom_plugin_customer_form_nonce';
 
     public function __construct()
     {
         add_shortcode(self::ORDER_SHORTCODE, array($this, 'order_form_shortcode'));
         add_shortcode(self::PRICE_SHORTCODE, array($this, 'product_price_shortcode'));
         add_shortcode(self::BUY_BUTTON_SHORTCODE, array($this, 'buy_button_shortcode'));
+        add_shortcode(self::CUSTOMER_REGISTRATION_SHORTCODE, array($this, 'customer_registration_shortcode'));
+        add_shortcode(self::CUSTOMER_PROFILE_SHORTCODE, array($this, 'customer_profile_shortcode'));
         add_action('init', array($this, 'handle_order_submission'));
+        add_action('init', array($this, 'handle_customer_submission'));
     }
 
     /**
@@ -173,6 +180,46 @@ class Shortcode
             esc_url($order_url),
             esc_html($atts['text'])
         ) . $this->get_buy_button_styles();
+    }
+
+    public function customer_registration_shortcode($atts)
+    {
+        if (!is_user_logged_in()) {
+            return $this->get_customer_auth_notice('Silakan login terlebih dulu untuk mengisi pendaftaran customer.');
+        }
+
+        $current_user = wp_get_current_user();
+
+        return Template::get('frontend/customer-registration', array(
+            'profile'       => $this->get_customer_profile_data($current_user->ID),
+            'city_options'  => $this->get_customer_city_options(),
+            'nonce_action'  => self::CUSTOMER_NONCE_ACTION,
+            'nonce_name'    => self::CUSTOMER_NONCE_NAME,
+            'feedback'      => $this->get_customer_feedback_message(),
+            'form_title'    => 'Pendaftaran Customer',
+            'form_subtitle' => 'Lengkapi data customer Anda untuk kebutuhan pengiriman dan verifikasi.',
+            'submit_label'  => 'Simpan Pendaftaran',
+        ));
+    }
+
+    public function customer_profile_shortcode($atts)
+    {
+        if (!is_user_logged_in()) {
+            return $this->get_customer_auth_notice('Silakan login terlebih dulu untuk melihat profile customer.');
+        }
+
+        $current_user = wp_get_current_user();
+
+        return Template::get('frontend/customer-profile', array(
+            'profile'       => $this->get_customer_profile_data($current_user->ID),
+            'city_options'  => $this->get_customer_city_options(),
+            'nonce_action'  => self::CUSTOMER_NONCE_ACTION,
+            'nonce_name'    => self::CUSTOMER_NONCE_NAME,
+            'feedback'      => $this->get_customer_feedback_message(),
+            'form_title'    => 'Profile Customer',
+            'form_subtitle' => 'Perbarui data customer Anda kapan saja dari halaman ini.',
+            'submit_label'  => 'Update Profile',
+        ));
     }
 
     private function resolve_current_product_id()
@@ -359,5 +406,181 @@ class Shortcode
 
         wp_safe_redirect(add_query_arg($args, $redirect_url));
         exit;
+    }
+
+    public function handle_customer_submission()
+    {
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+            return;
+        }
+
+        if (!isset($_POST['custom_plugin_frontend_action']) || $_POST['custom_plugin_frontend_action'] !== 'submit_customer_profile') {
+            return;
+        }
+
+        if (!is_user_logged_in()) {
+            $this->redirect_customer_with_feedback('login_required');
+        }
+
+        if (!isset($_POST[self::CUSTOMER_NONCE_NAME]) || !wp_verify_nonce(sanitize_text_field(wp_unslash($_POST[self::CUSTOMER_NONCE_NAME])), self::CUSTOMER_NONCE_ACTION)) {
+            $this->redirect_customer_with_feedback('invalid_nonce');
+        }
+
+        $current_user = wp_get_current_user();
+        $full_name = isset($_POST['customer_full_name']) ? sanitize_text_field(wp_unslash($_POST['customer_full_name'])) : '';
+        $address = isset($_POST['customer_address']) ? sanitize_textarea_field(wp_unslash($_POST['customer_address'])) : '';
+        $city = isset($_POST['customer_city']) ? sanitize_text_field(wp_unslash($_POST['customer_city'])) : '';
+        $city_options = $this->get_customer_city_options();
+        $city_values = wp_list_pluck($city_options, 'value');
+        $current_ktp_id = (int) get_user_meta($current_user->ID, '_customer_ktp_attachment_id', true);
+
+        if ($full_name === '' || $address === '' || $city === '' || !in_array($city, $city_values, true)) {
+            $this->redirect_customer_with_feedback('missing_fields');
+        }
+
+        $ktp_attachment_id = $current_ktp_id;
+        if (!empty($_FILES['customer_ktp_photo']['name'])) {
+            $ktp_attachment_id = $this->handle_customer_ktp_upload('customer_ktp_photo');
+            if ($ktp_attachment_id < 1) {
+                $this->redirect_customer_with_feedback('upload_failed');
+            }
+        } elseif ($current_ktp_id < 1) {
+            $this->redirect_customer_with_feedback('missing_ktp');
+        }
+
+        update_user_meta($current_user->ID, '_customer_full_name', $full_name);
+        update_user_meta($current_user->ID, '_customer_address', $address);
+        update_user_meta($current_user->ID, '_customer_city', $city);
+        update_user_meta($current_user->ID, '_customer_ktp_attachment_id', $ktp_attachment_id);
+
+        wp_update_user(array(
+            'ID'           => $current_user->ID,
+            'display_name' => $full_name,
+        ));
+
+        if (!in_array('customer', (array) $current_user->roles, true)) {
+            $current_user->add_role('customer');
+        }
+
+        $this->redirect_customer_with_feedback('saved');
+    }
+
+    private function handle_customer_ktp_upload($field_name)
+    {
+        if (!function_exists('media_handle_upload')) {
+            require_once ABSPATH . 'wp-admin/includes/file.php';
+            require_once ABSPATH . 'wp-admin/includes/media.php';
+            require_once ABSPATH . 'wp-admin/includes/image.php';
+        }
+
+        $attachment_id = media_handle_upload($field_name, 0);
+        if (is_wp_error($attachment_id)) {
+            return 0;
+        }
+
+        return (int) $attachment_id;
+    }
+
+    private function get_customer_profile_data($user_id)
+    {
+        $city = (string) get_user_meta($user_id, '_customer_city', true);
+        $ktp_attachment_id = (int) get_user_meta($user_id, '_customer_ktp_attachment_id', true);
+
+        return array(
+            'full_name'         => (string) get_user_meta($user_id, '_customer_full_name', true),
+            'address'           => (string) get_user_meta($user_id, '_customer_address', true),
+            'city'              => $city,
+            'city_label'        => $this->get_customer_city_label($city),
+            'ktp_attachment_id' => $ktp_attachment_id,
+            'ktp_image_html'    => $ktp_attachment_id > 0 ? wp_get_attachment_image($ktp_attachment_id, 'medium', false, array('class' => 'img-fluid rounded border', 'alt' => 'Foto KTP')) : '',
+            'has_customer_role' => in_array('customer', (array) get_userdata($user_id)->roles, true),
+        );
+    }
+
+    private function get_customer_city_options()
+    {
+        return array(
+            array(
+                'value' => 'kota-gorontalo',
+                'label' => 'Kota Gorontalo',
+                'price' => 'Rp.x',
+            ),
+            array(
+                'value' => 'kabupaten-gorontalo',
+                'label' => 'Kabupaten Gorontalo',
+                'price' => 'Rp.Y',
+            ),
+            array(
+                'value' => 'kabupaten-gorontalo-utara',
+                'label' => 'Kabupaten Gorontalo Utara',
+                'price' => 'Rp.z',
+            ),
+            array(
+                'value' => 'kabupaten-boalemo',
+                'label' => 'Kabupaten Boalemo',
+                'price' => 'Rp.A',
+            ),
+            array(
+                'value' => 'kabupaten-pohuwato',
+                'label' => 'Kabupaten Pohuwato',
+                'price' => 'Rp.B',
+            ),
+            array(
+                'value' => 'kabupaten-bone-bolango',
+                'label' => 'Kabupaten Bone Bolango',
+                'price' => 'Rp.C',
+            ),
+        );
+    }
+
+    private function get_customer_city_label($value)
+    {
+        foreach ($this->get_customer_city_options() as $city) {
+            if ($city['value'] === $value) {
+                return $city['label'] . ' (' . $city['price'] . ')';
+            }
+        }
+
+        return '';
+    }
+
+    private function get_customer_feedback_message()
+    {
+        if (!isset($_GET['customer_status'])) {
+            return '';
+        }
+
+        $status = sanitize_text_field(wp_unslash($_GET['customer_status']));
+        $messages = array(
+            'saved'          => 'Data customer berhasil disimpan.',
+            'missing_fields' => 'Mohon lengkapi semua field wajib.',
+            'missing_ktp'    => 'Foto KTP wajib diunggah.',
+            'upload_failed'  => 'Upload foto KTP gagal. Silakan coba lagi.',
+            'invalid_nonce'  => 'Sesi form tidak valid. Silakan kirim ulang.',
+            'login_required' => 'Anda harus login untuk mengakses form customer.',
+        );
+
+        return isset($messages[$status]) ? $messages[$status] : '';
+    }
+
+    private function redirect_customer_with_feedback($status)
+    {
+        $redirect_url = wp_get_referer();
+        if (!$redirect_url) {
+            $redirect_url = home_url('/');
+        }
+
+        wp_safe_redirect(add_query_arg(array('customer_status' => $status), $redirect_url));
+        exit;
+    }
+
+    private function get_customer_auth_notice($message)
+    {
+        return sprintf(
+            '<div class="alert alert-warning" role="alert">%1$s <a href="%2$s">%3$s</a></div>',
+            esc_html($message),
+            esc_url(wp_login_url(get_permalink())),
+            esc_html__('Login di sini', 'custom-plugin')
+        );
     }
 }

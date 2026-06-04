@@ -39,6 +39,8 @@ class Plugin
 
   public function init()
   {
+    Roles::register_roles();
+
     // Load internationalization
     add_action('init', array($this, 'load_textdomain'));
 

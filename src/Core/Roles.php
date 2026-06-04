@@ -9,6 +9,7 @@ if (!defined('ABSPATH')) {
 class Roles
 {
   const COURIER_ROLE = 'kurir';
+  const CUSTOMER_ROLE = 'customer';
 
   public static function register_roles()
   {
@@ -20,10 +21,19 @@ class Roles
         'upload_files' => true,
       )
     );
+
+    add_role(
+      self::CUSTOMER_ROLE,
+      'Customer',
+      array(
+        'read' => true,
+      )
+    );
   }
 
   public static function remove_roles()
   {
     remove_role(self::COURIER_ROLE);
+    remove_role(self::CUSTOMER_ROLE);
   }
 }
