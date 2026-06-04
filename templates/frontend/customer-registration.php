@@ -8,15 +8,15 @@ if (!defined('ABSPATH')) {
     <style>
         .custom-plugin-customer-form .custom-plugin-submit-customer-btn {
             --bs-btn-color: #fff;
-            --bs-btn-bg: #0E7490;
-            --bs-btn-border-color: #0E7490;
+            --bs-btn-bg: #F83C89;
+            --bs-btn-border-color: #F83C89;
             --bs-btn-hover-color: #fff;
-            --bs-btn-hover-bg: #0b6077;
-            --bs-btn-hover-border-color: #0b6077;
-            --bs-btn-focus-shadow-rgb: 14, 116, 144;
+            --bs-btn-hover-bg: #e2357c;
+            --bs-btn-hover-border-color: #e2357c;
+            --bs-btn-focus-shadow-rgb: 248, 60, 137;
             --bs-btn-active-color: #fff;
-            --bs-btn-active-bg: #094f61;
-            --bs-btn-active-border-color: #094f61;
+            --bs-btn-active-bg: #d82f73;
+            --bs-btn-active-border-color: #d82f73;
         }
     </style>
     <div class="row justify-content-center">

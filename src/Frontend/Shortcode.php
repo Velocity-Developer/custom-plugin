@@ -212,6 +212,7 @@ class Shortcode
 
         return Template::get('frontend/customer-profile', array(
             'profile'       => $this->get_customer_profile_data($current_user->ID),
+            'orders'        => $this->get_customer_orders($current_user->ID),
             'city_options'  => $this->get_customer_city_options(),
             'nonce_action'  => self::CUSTOMER_NONCE_ACTION,
             'nonce_name'    => self::CUSTOMER_NONCE_NAME,
@@ -219,6 +220,8 @@ class Shortcode
             'form_title'    => 'Profile Customer',
             'form_subtitle' => 'Perbarui data customer Anda kapan saja dari halaman ini.',
             'submit_label'  => 'Update Profile',
+            'payment_labels' => $this->get_payment_method_labels(),
+            'status_labels'  => $this->get_order_status_labels(),
         ));
     }
 
@@ -339,6 +342,7 @@ class Shortcode
         update_post_meta($order_id, '_order_product_quantity', (string) $quantity);
         update_post_meta($order_id, '_order_product_unit_price', (string) $unit_price);
         update_post_meta($order_id, '_order_total_price', (string) $total_price);
+        update_post_meta($order_id, '_order_customer_user_id', (string) get_current_user_id());
 
         $this->redirect_with_feedback('created');
     }
@@ -561,6 +565,69 @@ class Shortcode
         );
 
         return isset($messages[$status]) ? $messages[$status] : '';
+    }
+
+    private function get_customer_orders($user_id)
+    {
+        $orders = get_posts(array(
+            'post_type'      => 'order',
+            'post_status'    => array('publish', 'draft', 'pending', 'private'),
+            'posts_per_page' => 20,
+            'orderby'        => 'date',
+            'order'          => 'DESC',
+            'meta_key'       => '_order_customer_user_id',
+            'meta_value'     => (string) $user_id,
+        ));
+
+        if (empty($orders)) {
+            return array();
+        }
+
+        $items = array();
+        foreach ($orders as $order) {
+            $status = (string) get_post_meta($order->ID, '_order_order_status', true);
+            $quantity = (int) get_post_meta($order->ID, '_order_product_quantity', true);
+            $unit_price = (int) get_post_meta($order->ID, '_order_product_unit_price', true);
+            $total_price = (int) get_post_meta($order->ID, '_order_total_price', true);
+
+            $items[] = array(
+                'id'             => $order->ID,
+                'title'          => $order->post_title,
+                'date'           => get_the_date('d M Y H:i', $order),
+                'product_name'   => (string) get_post_meta($order->ID, '_order_product_name', true),
+                'quantity'       => $quantity,
+                'unit_price'     => $unit_price,
+                'total_price'    => $total_price,
+                'delivery_date'  => (string) get_post_meta($order->ID, '_order_delivery_date', true),
+                'delivery_time'  => (string) get_post_meta($order->ID, '_order_delivery_time', true),
+                'payment_method' => (string) get_post_meta($order->ID, '_order_payment_method', true),
+                'order_status'   => $status,
+            );
+        }
+
+        return $items;
+    }
+
+    private function get_payment_method_labels()
+    {
+        return array(
+            'bank_transfer'  => 'Transfer Bank',
+            'digital_wallet' => 'QRIS / Dompet Digital',
+            'cod'            => 'COD',
+        );
+    }
+
+    private function get_order_status_labels()
+    {
+        return array(
+            'pending'    => 'Pending',
+            'scheduled'  => 'Terjadwal',
+            'processing' => 'Diproses',
+            'delivering' => 'Dalam Pengiriman',
+            'delivered'  => 'Terkirim',
+            'completed'  => 'Selesai',
+            'cancelled'  => 'Dibatalkan',
+        );
     }
 
     private function redirect_customer_with_feedback($status)
