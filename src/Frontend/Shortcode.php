@@ -572,32 +572,26 @@ class Shortcode
             array(
                 'value' => 'kota-gorontalo',
                 'label' => 'Kota Gorontalo',
-                'price' => 'Rp.x',
             ),
             array(
                 'value' => 'kabupaten-gorontalo',
                 'label' => 'Kabupaten Gorontalo',
-                'price' => 'Rp.Y',
             ),
             array(
                 'value' => 'kabupaten-gorontalo-utara',
                 'label' => 'Kabupaten Gorontalo Utara',
-                'price' => 'Rp.z',
             ),
             array(
                 'value' => 'kabupaten-boalemo',
                 'label' => 'Kabupaten Boalemo',
-                'price' => 'Rp.A',
             ),
             array(
                 'value' => 'kabupaten-pohuwato',
                 'label' => 'Kabupaten Pohuwato',
-                'price' => 'Rp.B',
             ),
             array(
                 'value' => 'kabupaten-bone-bolango',
                 'label' => 'Kabupaten Bone Bolango',
-                'price' => 'Rp.C',
             ),
         );
     }
@@ -606,7 +600,7 @@ class Shortcode
     {
         foreach ($this->get_customer_city_options() as $city) {
             if ($city['value'] === $value) {
-                return $city['label'] . ' (' . $city['price'] . ')';
+                return $city['label'];
             }
         }
 
