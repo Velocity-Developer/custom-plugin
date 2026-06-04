@@ -25,6 +25,8 @@ class Shortcode
     const ORDER_NONCE_NAME = 'custom_plugin_order_form_nonce';
     const CUSTOMER_NONCE_ACTION = 'custom_plugin_submit_customer_profile';
     const CUSTOMER_NONCE_NAME = 'custom_plugin_customer_form_nonce';
+    const CUSTOMER_AUTH_NONCE_ACTION = 'custom_plugin_customer_auth';
+    const CUSTOMER_AUTH_NONCE_NAME = 'custom_plugin_customer_auth_nonce';
 
     public function __construct()
     {
@@ -35,6 +37,7 @@ class Shortcode
         add_shortcode(self::CUSTOMER_PROFILE_SHORTCODE, array($this, 'customer_profile_shortcode'));
         add_action('init', array($this, 'handle_order_submission'));
         add_action('init', array($this, 'handle_customer_submission'));
+        add_action('init', array($this, 'handle_customer_registration_account'));
     }
 
     /**
@@ -185,7 +188,7 @@ class Shortcode
     public function customer_registration_shortcode($atts)
     {
         if (!is_user_logged_in()) {
-            return $this->get_customer_auth_notice('Silakan login terlebih dulu untuk mengisi pendaftaran customer.');
+            return $this->get_customer_auth_panel('Silakan login atau buat akun customer terlebih dulu.');
         }
 
         $current_user = wp_get_current_user();
@@ -205,7 +208,7 @@ class Shortcode
     public function customer_profile_shortcode($atts)
     {
         if (!is_user_logged_in()) {
-            return $this->get_customer_auth_notice('Silakan login terlebih dulu untuk melihat profile customer.');
+            return $this->get_customer_auth_panel('Silakan login atau daftar akun customer untuk melihat profile.');
         }
 
         $current_user = wp_get_current_user();
@@ -469,6 +472,68 @@ class Shortcode
         $this->redirect_customer_with_feedback('saved');
     }
 
+    public function handle_customer_registration_account()
+    {
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+            return;
+        }
+
+        if (!isset($_POST['custom_plugin_frontend_action']) || $_POST['custom_plugin_frontend_action'] !== 'register_customer_account') {
+            return;
+        }
+
+        if (!isset($_POST[self::CUSTOMER_AUTH_NONCE_NAME]) || !wp_verify_nonce(sanitize_text_field(wp_unslash($_POST[self::CUSTOMER_AUTH_NONCE_NAME])), self::CUSTOMER_AUTH_NONCE_ACTION)) {
+            $this->redirect_customer_auth('invalid_nonce');
+        }
+
+        $full_name = isset($_POST['register_full_name']) ? sanitize_text_field(wp_unslash($_POST['register_full_name'])) : '';
+        $email = isset($_POST['register_email']) ? sanitize_email(wp_unslash($_POST['register_email'])) : '';
+        $password = isset($_POST['register_password']) ? (string) wp_unslash($_POST['register_password']) : '';
+        $city = isset($_POST['register_city']) ? sanitize_text_field(wp_unslash($_POST['register_city'])) : '';
+        $city_values = wp_list_pluck($this->get_customer_city_options(), 'value');
+
+        if ($full_name === '' || $email === '' || $password === '' || $city === '' || !in_array($city, $city_values, true)) {
+            $this->redirect_customer_auth('missing_fields');
+        }
+
+        if (!is_email($email)) {
+            $this->redirect_customer_auth('invalid_email');
+        }
+
+        if (email_exists($email)) {
+            $this->redirect_customer_auth('email_exists');
+        }
+
+        if (strlen($password) < 6) {
+            $this->redirect_customer_auth('weak_password');
+        }
+
+        $username = $this->generate_customer_username($email);
+        $user_id = wp_create_user($username, $password, $email);
+
+        if (is_wp_error($user_id) || !$user_id) {
+            $this->redirect_customer_auth('register_failed');
+        }
+
+        wp_update_user(array(
+            'ID'           => $user_id,
+            'display_name' => $full_name,
+        ));
+
+        update_user_meta($user_id, '_customer_full_name', $full_name);
+        update_user_meta($user_id, '_customer_city', $city);
+
+        $user = get_user_by('id', $user_id);
+        if ($user instanceof \WP_User) {
+            $user->add_role('customer');
+        }
+
+        wp_set_current_user($user_id);
+        wp_set_auth_cookie($user_id, true);
+
+        $this->redirect_customer_auth('registered');
+    }
+
     private function handle_customer_ktp_upload($field_name)
     {
         if (!function_exists('media_handle_upload')) {
@@ -567,6 +632,26 @@ class Shortcode
         return isset($messages[$status]) ? $messages[$status] : '';
     }
 
+    private function get_customer_auth_feedback_message()
+    {
+        if (!isset($_GET['customer_auth_status'])) {
+            return '';
+        }
+
+        $status = sanitize_text_field(wp_unslash($_GET['customer_auth_status']));
+        $messages = array(
+            'registered'     => 'Akun customer berhasil dibuat dan Anda sudah login.',
+            'missing_fields' => 'Mohon lengkapi semua field register.',
+            'invalid_email'  => 'Email yang dimasukkan tidak valid.',
+            'email_exists'   => 'Email sudah terdaftar. Silakan login.',
+            'weak_password'  => 'Password minimal 6 karakter.',
+            'invalid_nonce'  => 'Sesi form tidak valid. Silakan coba lagi.',
+            'register_failed' => 'Pendaftaran akun gagal. Silakan coba lagi.',
+        );
+
+        return isset($messages[$status]) ? $messages[$status] : '';
+    }
+
     private function get_customer_orders($user_id)
     {
         $orders = get_posts(array(
@@ -639,6 +724,46 @@ class Shortcode
 
         wp_safe_redirect(add_query_arg(array('customer_status' => $status), $redirect_url));
         exit;
+    }
+
+    private function redirect_customer_auth($status)
+    {
+        $redirect_url = wp_get_referer();
+        if (!$redirect_url) {
+            $redirect_url = home_url('/');
+        }
+
+        wp_safe_redirect(add_query_arg(array('customer_auth_status' => $status), $redirect_url));
+        exit;
+    }
+
+    private function get_customer_auth_panel($message)
+    {
+        return Template::get('frontend/customer-auth', array(
+            'message'      => $message,
+            'feedback'     => $this->get_customer_auth_feedback_message(),
+            'nonce_action' => self::CUSTOMER_AUTH_NONCE_ACTION,
+            'nonce_name'   => self::CUSTOMER_AUTH_NONCE_NAME,
+            'login_url'    => wp_login_url(get_permalink()),
+            'city_options' => $this->get_customer_city_options(),
+        ));
+    }
+
+    private function generate_customer_username($email)
+    {
+        $base = sanitize_user(current(explode('@', $email)), true);
+        if ($base === '') {
+            $base = 'customer';
+        }
+
+        $username = $base;
+        $suffix = 1;
+        while (username_exists($username)) {
+            $username = $base . $suffix;
+            $suffix++;
+        }
+
+        return $username;
     }
 
     private function get_customer_auth_notice($message)

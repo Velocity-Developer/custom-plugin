@@ -20,7 +20,7 @@ if (!defined('ABSPATH')) {
         }
     </style>
     <div class="row justify-content-center">
-        <div class="col-12 col-lg-8">
+        <div class="col-12">
             <div class="card shadow-sm border-0">
                 <div class="card-body p-4 p-md-5">
                     <div class="mb-4">
@@ -54,7 +54,7 @@ if (!defined('ABSPATH')) {
                                 <option value="">Pilih kota</option>
                                 <?php foreach ($city_options as $city) : ?>
                                     <option value="<?php echo esc_attr($city['value']); ?>" <?php selected($profile['city'], $city['value']); ?>>
-                                        <?php echo esc_html($city['label'] . ' - ' . $city['price']); ?>
+                                        <?php echo esc_html($city['label']); ?>
                                     </option>
                                 <?php endforeach; ?>
                             </select>
