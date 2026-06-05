@@ -1,7 +1,5 @@
 <?php
 
-use CustomPlugin\Frontend\Frontend;
-
 if (!defined('ABSPATH')) {
     exit;
 }
@@ -53,14 +51,12 @@ if (!defined('ABSPATH')) {
                                 <select id="product-id" name="product_id" class="form-select" required>
                                     <option value="">Pilih produk</option>
                                     <?php foreach ($products as $product) : ?>
-                                        <option value="<?php echo esc_attr((string) $product['id']); ?>" <?php selected($old['product_id'], $product['id']); ?>>
-                                            <?php
-                                            $label = $product['title'];
-                                            if ($product['price'] !== '') {
-                                                $label .= ' - ' . Frontend::get_formatted_price((int) $product['price']);
-                                            }
-                                            echo esc_html($label);
-                                            ?>
+                                        <option
+                                            value="<?php echo esc_attr((string) $product['id']); ?>"
+                                            data-base-price="<?php echo esc_attr((string) $product['price']); ?>"
+                                            data-city-prices="<?php echo esc_attr(wp_json_encode($product['city_prices'])); ?>"
+                                            <?php selected($old['product_id'], $product['id']); ?>>
+                                            <?php echo esc_html($product['title']); ?>
                                         </option>
                                     <?php endforeach; ?>
                                 </select>
@@ -71,7 +67,23 @@ if (!defined('ABSPATH')) {
                                 <input type="number" min="1" step="1" id="quantity" name="quantity" class="form-control" value="<?php echo esc_attr((string) $old['quantity']); ?>" required>
                             </div>
 
-                            <div class="col-12 col-md-8">
+                            <div class="col-12 col-md-4">
+                                <label for="customer-city" class="form-label">Kota</label>
+                                <select id="customer-city" name="customer_city" class="form-select" required <?php disabled($is_logged_in && $logged_in_city !== ''); ?>>
+                                    <option value="">Pilih kota</option>
+                                    <?php foreach ($city_options as $city) : ?>
+                                        <option value="<?php echo esc_attr($city['value']); ?>" <?php selected($old['customer_city'], $city['value']); ?>>
+                                            <?php echo esc_html($city['label']); ?>
+                                        </option>
+                                    <?php endforeach; ?>
+                                </select>
+                                <?php if ($is_logged_in && $logged_in_city !== '') : ?>
+                                    <input type="hidden" name="customer_city" value="<?php echo esc_attr($logged_in_city); ?>">
+                                    <div class="form-text">Kota mengikuti data akun customer yang sedang login.</div>
+                                <?php endif; ?>
+                            </div>
+
+                            <div class="col-12 col-md-4">
                                 <label for="payment-method" class="form-label">Metode Pembayaran</label>
                                 <select id="payment-method" name="payment_method" class="form-select" required>
                                     <option value="">Pilih metode pembayaran</option>
@@ -79,6 +91,12 @@ if (!defined('ABSPATH')) {
                                         <option value="<?php echo esc_attr($value); ?>" <?php selected($old['payment_method'], $value); ?>><?php echo esc_html($label); ?></option>
                                     <?php endforeach; ?>
                                 </select>
+                            </div>
+
+                            <div class="col-12">
+                                <div class="alert alert-light border mb-0" id="product-price-info" role="alert">
+                                    Pilih produk dan kota untuk melihat harga yang sesuai.
+                                </div>
                             </div>
 
                             <div class="col-12 d-none" id="payment-info-wrapper">
@@ -166,6 +184,46 @@ if (!defined('ABSPATH')) {
         var paymentInfoWrapper = document.getElementById('payment-info-wrapper');
         var bankPaymentInfo = document.getElementById('bank-payment-info');
         var qrisPaymentInfo = document.getElementById('qris-payment-info');
+        var productField = document.getElementById('product-id');
+        var cityField = document.getElementById('customer-city');
+        var quantityField = document.getElementById('quantity');
+        var priceInfo = document.getElementById('product-price-info');
+
+        function formatPrice(price) {
+            return 'Rp ' + Number(price || 0).toLocaleString('id-ID');
+        }
+
+        function updateProductPriceInfo() {
+            if (!productField || !cityField || !priceInfo) {
+                return;
+            }
+
+            var selectedOption = productField.options[productField.selectedIndex];
+            if (!selectedOption || !selectedOption.value) {
+                priceInfo.textContent = 'Pilih produk dan kota untuk melihat harga yang sesuai.';
+                return;
+            }
+
+            if (!cityField.value) {
+                priceInfo.textContent = 'Pilih kota untuk melihat harga produk.';
+                return;
+            }
+
+            var basePrice = selectedOption.getAttribute('data-base-price') || '0';
+            var cityPrices = {};
+
+            try {
+                cityPrices = JSON.parse(selectedOption.getAttribute('data-city-prices') || '{}');
+            } catch (error) {
+                cityPrices = {};
+            }
+
+            var activePrice = Number(cityPrices[cityField.value] ? cityPrices[cityField.value] : basePrice);
+            var quantity = quantityField ? Math.max(1, parseInt(quantityField.value || '1', 10)) : 1;
+            var totalPrice = activePrice * quantity;
+
+            priceInfo.innerHTML = 'Harga satuan: <strong>' + formatPrice(activePrice) + '</strong><br>Total ' + quantity + ' item: <strong>' + formatPrice(totalPrice) + '</strong>';
+        }
 
         if (!button || !gpsField || !helpText) {
             return;
@@ -199,6 +257,21 @@ if (!defined('ABSPATH')) {
             paymentMethod.addEventListener('change', updatePaymentInfo);
             updatePaymentInfo();
         }
+
+        if (productField) {
+            productField.addEventListener('change', updateProductPriceInfo);
+        }
+
+        if (cityField) {
+            cityField.addEventListener('change', updateProductPriceInfo);
+        }
+
+        if (quantityField) {
+            quantityField.addEventListener('input', updateProductPriceInfo);
+            quantityField.addEventListener('change', updateProductPriceInfo);
+        }
+
+        updateProductPriceInfo();
 
         button.addEventListener('click', function() {
             if (!navigator.geolocation) {

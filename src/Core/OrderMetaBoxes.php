@@ -16,8 +16,12 @@ class OrderMetaBoxes
 
   private $fields = array(
     'customer_name'       => 'text',
+    'customer_email'      => 'text',
+    'customer_username'   => 'text',
+    'customer_user_id'    => 'text',
     'customer_phone'      => 'text',
     'customer_address'    => 'textarea',
+    'customer_city'       => 'text',
     'customer_gps'        => 'text',
     'delivery_date'       => 'date',
     'delivery_time'       => 'time',
@@ -67,8 +71,12 @@ class OrderMetaBoxes
 
     echo '<table class="form-table" role="presentation"><tbody>';
     $this->render_text_row('Nama Konsumen', 'customer_name', $values['customer_name']);
+    $this->render_text_row('Email Customer', 'customer_email', $values['customer_email']);
+    $this->render_text_row('Username Customer', 'customer_username', $values['customer_username']);
+    $this->render_text_row('User ID Customer', 'customer_user_id', $values['customer_user_id']);
     $this->render_text_row('No. Telepon', 'customer_phone', $values['customer_phone']);
     $this->render_textarea_row('Alamat Lengkap', 'customer_address', $values['customer_address']);
+    $this->render_text_row('Kota', 'customer_city', $values['customer_city']);
     $this->render_text_row('Titik GPS', 'customer_gps', $values['customer_gps'], 'Contoh: -6.200000, 106.816666');
     $this->render_text_row('Tanggal Kirim', 'delivery_date', $values['delivery_date'], '', 'date');
     $this->render_text_row('Jam Kirim', 'delivery_time', $values['delivery_time'], '', 'time');
@@ -111,10 +119,17 @@ class OrderMetaBoxes
       $new_columns[$key] = $label;
 
       if ($key === 'title') {
+        $new_columns['customer_summary'] = 'Customer';
+        $new_columns['customer_email'] = 'Email Customer';
+        $new_columns['customer_address'] = 'Alamat Lengkap';
+        $new_columns['customer_gps'] = 'Titik GPS';
+        $new_columns['product_summary'] = 'Produk';
+        $new_columns['price_summary'] = 'Harga';
         $new_columns['order_status'] = 'Status';
         $new_columns['delivery_schedule'] = 'Jadwal Kirim';
         $new_columns['assigned_courier'] = 'Kurir';
         $new_columns['payment_method'] = 'Pembayaran';
+        $new_columns['customer_account'] = 'Akun Login';
       }
     }
 
@@ -123,6 +138,53 @@ class OrderMetaBoxes
 
   public function render_order_column($column, $post_id)
   {
+    if ($column === 'customer_summary') {
+      $customer_name = (string) get_post_meta($post_id, '_order_customer_name', true);
+      $customer_phone = (string) get_post_meta($post_id, '_order_customer_phone', true);
+      $customer_city = (string) get_post_meta($post_id, '_order_customer_city', true);
+
+      echo '<strong>' . esc_html($customer_name !== '' ? $customer_name : '-') . '</strong><br>';
+      echo '<span>' . esc_html($customer_phone !== '' ? $customer_phone : '-') . '</span><br>';
+      echo '<span style="color:#646970;">' . esc_html($customer_city !== '' ? $customer_city : '-') . '</span>';
+      return;
+    }
+
+    if ($column === 'product_summary') {
+      $product_name = (string) get_post_meta($post_id, '_order_product_name', true);
+      $quantity = (string) get_post_meta($post_id, '_order_product_quantity', true);
+
+      echo '<strong>' . esc_html($product_name !== '' ? $product_name : '-') . '</strong><br>';
+      echo '<span>Qty: ' . esc_html($quantity !== '' ? $quantity : '0') . '</span>';
+      return;
+    }
+
+    if ($column === 'price_summary') {
+      $unit_price = (int) get_post_meta($post_id, '_order_product_unit_price', true);
+      $total_price = (int) get_post_meta($post_id, '_order_total_price', true);
+
+      echo '<strong>Total: ' . esc_html($this->format_price($total_price)) . '</strong><br>';
+      echo '<span>Satuan: ' . esc_html($this->format_price($unit_price)) . '</span>';
+      return;
+    }
+
+    if ($column === 'customer_email') {
+      $customer_email = (string) get_post_meta($post_id, '_order_customer_email', true);
+      echo esc_html($customer_email !== '' ? $customer_email : '-');
+      return;
+    }
+
+    if ($column === 'customer_address') {
+      $customer_address = (string) get_post_meta($post_id, '_order_customer_address', true);
+      echo $customer_address !== '' ? nl2br(esc_html($customer_address)) : '-';
+      return;
+    }
+
+    if ($column === 'customer_gps') {
+      $customer_gps = (string) get_post_meta($post_id, '_order_customer_gps', true);
+      echo esc_html($customer_gps !== '' ? $customer_gps : '-');
+      return;
+    }
+
     if ($column === 'order_status') {
       $status = get_post_meta($post_id, '_order_order_status', true);
       echo '<div class="custom-plugin-order-list-field" data-order-id="' . esc_attr((string) $post_id) . '">';
@@ -167,6 +229,17 @@ class OrderMetaBoxes
     if ($column === 'payment_method') {
       $payment_method = get_post_meta($post_id, '_order_payment_method', true);
       echo esc_html($this->get_payment_method_label($payment_method));
+      return;
+    }
+
+    if ($column === 'customer_account') {
+      $customer_email = (string) get_post_meta($post_id, '_order_customer_email', true);
+      $customer_username = (string) get_post_meta($post_id, '_order_customer_username', true);
+      $customer_user_id = (string) get_post_meta($post_id, '_order_customer_user_id', true);
+
+      echo '<strong>' . esc_html($customer_email !== '' ? $customer_email : '-') . '</strong><br>';
+      echo '<span>' . esc_html($customer_username !== '' ? $customer_username : '-') . '</span><br>';
+      echo '<span style="color:#646970;">User ID: ' . esc_html($customer_user_id !== '' ? $customer_user_id : '-') . '</span>';
     }
   }
 
@@ -352,6 +425,11 @@ class OrderMetaBoxes
       'completed'  => 'Selesai',
       'cancelled'  => 'Dibatalkan',
     );
+  }
+
+  private function format_price($price)
+  {
+    return 'Rp ' . number_format((int) $price, 0, ',', '.');
   }
 
   private function render_text_row($label, $field_key, $value, $description = '', $type = 'text')

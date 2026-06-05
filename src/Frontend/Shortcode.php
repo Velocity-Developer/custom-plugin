@@ -79,27 +79,48 @@ class Shortcode
         ));
 
         $product_options = array();
+        $city_options = $this->get_customer_city_options();
         foreach ($products as $product) {
-            $price = get_post_meta($product->ID, '_product_price', true);
+            $base_price = get_post_meta($product->ID, '_product_price', true);
+            $city_prices = array();
+
+            foreach ($city_options as $city_option) {
+                $meta_key = $this->get_product_city_price_meta_key($city_option['value']);
+                $city_prices[$city_option['value']] = $meta_key !== '' ? get_post_meta($product->ID, $meta_key, true) : '';
+            }
+
             $product_options[] = array(
-                'id'    => $product->ID,
-                'title' => $product->post_title,
-                'price' => $price,
+                'id'          => $product->ID,
+                'title'       => $product->post_title,
+                'price'       => $base_price,
+                'city_prices' => $city_prices,
             );
         }
 
+        $old = $this->get_old_input();
+        $logged_in_city = '';
+        if (is_user_logged_in()) {
+            $logged_in_city = (string) get_user_meta(get_current_user_id(), '_customer_city', true);
+            if ($old['customer_city'] === '' && $logged_in_city !== '') {
+                $old['customer_city'] = $logged_in_city;
+            }
+        }
+
         return Template::get('frontend/order-form', array(
-            'products'      => $product_options,
-            'nonce_action'  => self::ORDER_NONCE_ACTION,
-            'nonce_name'    => self::ORDER_NONCE_NAME,
-            'feedback'      => $this->get_feedback_message(),
-            'old'           => $this->get_old_input(),
-            'store_settings' => Admin::get_store_settings(),
+            'products'          => $product_options,
+            'nonce_action'      => self::ORDER_NONCE_ACTION,
+            'nonce_name'        => self::ORDER_NONCE_NAME,
+            'feedback'          => $this->get_feedback_message(),
+            'old'               => $old,
+            'store_settings'    => Admin::get_store_settings(),
             'payment_methods' => array(
                 'bank_transfer'  => 'Transfer Bank',
                 'digital_wallet' => 'QRIS / Dompet Digital',
                 'cod'            => 'COD',
             ),
+            'city_options'      => $city_options,
+            'logged_in_city'    => $logged_in_city,
+            'is_logged_in'      => is_user_logged_in(),
         ));
     }
 
@@ -300,15 +321,44 @@ class Shortcode
         $delivery_date = isset($_POST['delivery_date']) ? sanitize_text_field(wp_unslash($_POST['delivery_date'])) : '';
         $delivery_time = isset($_POST['delivery_time']) ? sanitize_text_field(wp_unslash($_POST['delivery_time'])) : '';
         $payment_method = isset($_POST['payment_method']) ? sanitize_text_field(wp_unslash($_POST['payment_method'])) : '';
+        $customer_city = isset($_POST['customer_city']) ? sanitize_text_field(wp_unslash($_POST['customer_city'])) : '';
+        $customer_user_id = get_current_user_id();
+        $customer_email = '';
+        $customer_username = '';
+        $city_values = wp_list_pluck($this->get_customer_city_options(), 'value');
+
+        if (is_user_logged_in()) {
+            $current_user = wp_get_current_user();
+            $customer_email = (string) $current_user->user_email;
+            $customer_username = (string) $current_user->user_login;
+
+            $profile_name = (string) get_user_meta($customer_user_id, '_customer_full_name', true);
+            $profile_address = (string) get_user_meta($customer_user_id, '_customer_address', true);
+            $profile_city = (string) get_user_meta($customer_user_id, '_customer_city', true);
+
+            if ($profile_name !== '') {
+                $customer_name = $profile_name;
+            }
+
+            if ($profile_address !== '') {
+                $customer_address = $profile_address;
+            }
+
+            if ($profile_city !== '') {
+                $customer_city = $profile_city;
+            }
+        }
 
         if (
             $product_id < 1 ||
             $customer_name === '' ||
             $customer_phone === '' ||
             $customer_address === '' ||
+            $customer_city === '' ||
             $delivery_date === '' ||
             $delivery_time === '' ||
-            !in_array($payment_method, array('bank_transfer', 'digital_wallet', 'cod'), true)
+            !in_array($payment_method, array('bank_transfer', 'digital_wallet', 'cod'), true) ||
+            !in_array($customer_city, $city_values, true)
         ) {
             $this->redirect_with_feedback('missing_fields');
         }
@@ -318,8 +368,7 @@ class Shortcode
             $this->redirect_with_feedback('invalid_product');
         }
 
-        $price = get_post_meta($product_id, '_product_price', true);
-        $unit_price = absint($price);
+        $unit_price = $this->get_product_price_for_city($product_id, $customer_city);
         $total_price = $unit_price * $quantity;
 
         $order_id = wp_insert_post(array(
@@ -335,7 +384,10 @@ class Shortcode
         update_post_meta($order_id, '_order_customer_name', $customer_name);
         update_post_meta($order_id, '_order_customer_phone', $customer_phone);
         update_post_meta($order_id, '_order_customer_address', $customer_address);
+        update_post_meta($order_id, '_order_customer_city', $customer_city);
         update_post_meta($order_id, '_order_customer_gps', $customer_gps);
+        update_post_meta($order_id, '_order_customer_email', $customer_email);
+        update_post_meta($order_id, '_order_customer_username', $customer_username);
         update_post_meta($order_id, '_order_delivery_date', $delivery_date);
         update_post_meta($order_id, '_order_delivery_time', $delivery_time);
         update_post_meta($order_id, '_order_payment_method', $payment_method);
@@ -345,7 +397,7 @@ class Shortcode
         update_post_meta($order_id, '_order_product_quantity', (string) $quantity);
         update_post_meta($order_id, '_order_product_unit_price', (string) $unit_price);
         update_post_meta($order_id, '_order_total_price', (string) $total_price);
-        update_post_meta($order_id, '_order_customer_user_id', (string) get_current_user_id());
+        update_post_meta($order_id, '_order_customer_user_id', (string) $customer_user_id);
 
         $this->redirect_with_feedback('created');
     }
@@ -376,6 +428,7 @@ class Shortcode
             'customer_name'    => isset($_GET['customer_name']) ? sanitize_text_field(wp_unslash($_GET['customer_name'])) : '',
             'customer_phone'   => isset($_GET['customer_phone']) ? sanitize_text_field(wp_unslash($_GET['customer_phone'])) : '',
             'customer_address' => isset($_GET['customer_address']) ? sanitize_textarea_field(wp_unslash($_GET['customer_address'])) : '',
+            'customer_city'    => isset($_GET['customer_city']) ? sanitize_text_field(wp_unslash($_GET['customer_city'])) : '',
             'customer_gps'     => isset($_GET['customer_gps']) ? sanitize_text_field(wp_unslash($_GET['customer_gps'])) : '',
             'delivery_date'    => isset($_GET['delivery_date']) ? sanitize_text_field(wp_unslash($_GET['delivery_date'])) : '',
             'delivery_time'    => isset($_GET['delivery_time']) ? sanitize_text_field(wp_unslash($_GET['delivery_time'])) : '',
@@ -398,6 +451,7 @@ class Shortcode
                 'customer_name',
                 'customer_phone',
                 'customer_address',
+                'customer_city',
                 'customer_gps',
                 'delivery_date',
                 'delivery_time',
@@ -607,6 +661,36 @@ class Shortcode
         return '';
     }
 
+    private function get_product_price_for_city($product_id, $city)
+    {
+        $base_price = absint(get_post_meta($product_id, '_product_price', true));
+        $meta_key = $this->get_product_city_price_meta_key($city);
+        if ($meta_key === '') {
+            return $base_price;
+        }
+
+        $city_price = get_post_meta($product_id, $meta_key, true);
+        if ($city_price === '') {
+            return $base_price;
+        }
+
+        return absint($city_price);
+    }
+
+    private function get_product_city_price_meta_key($city)
+    {
+        $map = array(
+            'kota-gorontalo' => '_product_price_kota_gorontalo',
+            'kabupaten-gorontalo' => '_product_price_kabupaten_gorontalo',
+            'kabupaten-gorontalo-utara' => '_product_price_kabupaten_gorontalo_utara',
+            'kabupaten-boalemo' => '_product_price_kabupaten_boalemo',
+            'kabupaten-pohuwato' => '_product_price_kabupaten_pohuwato',
+            'kabupaten-bone-bolango' => '_product_price_kabupaten_bone_olango',
+        );
+
+        return isset($map[$city]) ? $map[$city] : '';
+    }
+
     private function get_customer_feedback_message()
     {
         if (!isset($_GET['customer_status'])) {
@@ -648,14 +732,43 @@ class Shortcode
 
     private function get_customer_orders($user_id)
     {
+        $user = get_user_by('id', $user_id);
+        if (!$user instanceof \WP_User) {
+            return array();
+        }
+
+        $meta_query = array(
+            'relation' => 'OR',
+            array(
+                'key'     => '_order_customer_user_id',
+                'value'   => (string) $user_id,
+                'compare' => '=',
+            ),
+        );
+
+        if ($user->user_email !== '') {
+            $meta_query[] = array(
+                'key'     => '_order_customer_email',
+                'value'   => (string) $user->user_email,
+                'compare' => '=',
+            );
+        }
+
+        if ($user->user_login !== '') {
+            $meta_query[] = array(
+                'key'     => '_order_customer_username',
+                'value'   => (string) $user->user_login,
+                'compare' => '=',
+            );
+        }
+
         $orders = get_posts(array(
             'post_type'      => 'order',
             'post_status'    => array('publish', 'draft', 'pending', 'private'),
             'posts_per_page' => 20,
             'orderby'        => 'date',
             'order'          => 'DESC',
-            'meta_key'       => '_order_customer_user_id',
-            'meta_value'     => (string) $user_id,
+            'meta_query'     => $meta_query,
         ));
 
         if (empty($orders)) {
