@@ -98,7 +98,8 @@ class Shortcode
         }
 
         $old = $this->get_old_input();
-        $is_logged_in = is_user_logged_in();
+        $current_user_id = get_current_user_id();
+        $is_logged_in = $current_user_id > 0;
         $logged_in_city = '';
         $logged_in_email = '';
         $lock_fields = array(
@@ -109,14 +110,13 @@ class Shortcode
         );
 
         if ($is_logged_in) {
-            $user_id = get_current_user_id();
             $current_user = wp_get_current_user();
             $logged_in_email = (string) $current_user->user_email;
-            $logged_in_city = (string) get_user_meta($user_id, '_customer_city', true);
-            $profile_name = (string) get_user_meta($user_id, '_customer_full_name', true);
-            $profile_address = (string) get_user_meta($user_id, '_customer_address', true);
-            $profile_whatsapp = (string) get_user_meta($user_id, '_customer_whatsapp', true);
-            $profile_phone = (string) get_user_meta($user_id, '_customer_phone', true);
+            $logged_in_city = (string) get_user_meta($current_user_id, '_customer_city', true);
+            $profile_name = (string) get_user_meta($current_user_id, '_customer_full_name', true);
+            $profile_address = (string) get_user_meta($current_user_id, '_customer_address', true);
+            $profile_whatsapp = (string) get_user_meta($current_user_id, '_customer_whatsapp', true);
+            $profile_phone = (string) get_user_meta($current_user_id, '_customer_phone', true);
 
             if ($old['customer_name'] === '') {
                 $old['customer_name'] = $profile_name !== '' ? $profile_name : (string) $current_user->display_name;
@@ -363,12 +363,13 @@ class Shortcode
         $delivery_time = isset($_POST['delivery_time']) ? sanitize_text_field(wp_unslash($_POST['delivery_time'])) : '';
         $payment_method = isset($_POST['payment_method']) ? sanitize_text_field(wp_unslash($_POST['payment_method'])) : '';
         $customer_city = isset($_POST['customer_city']) ? sanitize_text_field(wp_unslash($_POST['customer_city'])) : '';
-        $customer_user_id = is_user_logged_in() ? get_current_user_id() : 0;
+        $customer_user_id = get_current_user_id();
+        $is_logged_in = $customer_user_id > 0;
         $customer_email = '';
         $customer_username = '';
         $city_values = wp_list_pluck($this->get_customer_city_options(), 'value');
 
-        if (is_user_logged_in()) {
+        if ($is_logged_in) {
             $current_user = wp_get_current_user();
             $customer_email = (string) $current_user->user_email;
             $customer_username = (string) $current_user->user_login;
@@ -392,14 +393,14 @@ class Shortcode
             $customer_email = $customer_email_input;
         }
 
-        if (!is_user_logged_in() && $customer_email !== '' && !is_email($customer_email)) {
+        if (!$is_logged_in && $customer_email !== '' && !is_email($customer_email)) {
             $this->redirect_with_feedback('missing_fields');
         }
 
         if (
             $product_id < 1 ||
             $customer_name === '' ||
-            (!is_user_logged_in() && $customer_email === '') ||
+            (!$is_logged_in && $customer_email === '') ||
             $customer_phone === '' ||
             $customer_address === '' ||
             $customer_city === '' ||
@@ -411,7 +412,7 @@ class Shortcode
             $this->redirect_with_feedback('missing_fields');
         }
 
-        if (is_user_logged_in() && $customer_user_id > 0 && $customer_phone !== '') {
+        if ($is_logged_in && $customer_phone !== '') {
             update_user_meta($customer_user_id, '_customer_whatsapp', $customer_phone);
             update_user_meta($customer_user_id, '_customer_phone', $customer_phone);
         }
@@ -451,7 +452,7 @@ class Shortcode
         update_post_meta($order_id, '_order_product_quantity', (string) $quantity);
         update_post_meta($order_id, '_order_product_unit_price', (string) $unit_price);
         update_post_meta($order_id, '_order_total_price', (string) $total_price);
-        if ($customer_user_id > 0) {
+        if ($is_logged_in) {
             update_post_meta($order_id, '_order_customer_user_id', (string) $customer_user_id);
         }
 
@@ -799,31 +800,35 @@ class Shortcode
             return array();
         }
 
-        $customer_full_name = (string) get_user_meta($user_id, '_customer_full_name', true);
-        $customer_display_name = (string) $user->display_name;
-        $order_ids = $this->get_matching_customer_order_ids($user_id, $user, $customer_full_name, $customer_display_name);
+        global $wpdb;
+
+        $order_ids = $wpdb->get_col(
+            $wpdb->prepare(
+                "SELECT p.ID
+                FROM {$wpdb->posts} p
+                INNER JOIN {$wpdb->postmeta} pm ON pm.post_id = p.ID
+                WHERE p.post_type = %s
+                AND p.post_status NOT IN ('trash', 'auto-draft', 'inherit')
+                AND pm.meta_key = %s
+                AND pm.meta_value = %s
+                ORDER BY p.post_date DESC
+                LIMIT 200",
+                'order',
+                '_order_customer_user_id',
+                (string) $user_id
+            )
+        );
 
         if (empty($order_ids)) {
             return array();
         }
 
-        $orders = get_posts(array(
-            'post_type'      => 'order',
-            'post_status'    => array('publish', 'draft', 'pending', 'private', 'future'),
-            'posts_per_page' => 100,
-            'post__in'       => $order_ids,
-            'orderby'        => 'post__in',
-            'order'          => 'DESC',
-            'suppress_filters' => false,
-        ));
-
-        if (empty($orders)) {
-            return array();
-        }
-
         $items = array();
-        foreach ($orders as $order) {
-            $this->sync_order_customer_identity($order->ID, $user_id, $user, $customer_full_name);
+        foreach ($order_ids as $order_id) {
+            $order = get_post((int) $order_id);
+            if (!$order instanceof \WP_Post || $order->post_type !== 'order') {
+                continue;
+            }
             $items[] = $this->build_customer_order_item($order);
         }
 

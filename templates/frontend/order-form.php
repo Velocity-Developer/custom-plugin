@@ -130,7 +130,7 @@ $lock_fields = isset($lock_fields) && is_array($lock_fields) ? $lock_fields : ar
 
                             <div class="col-12 col-md-6">
                                 <label for="customer-name" class="form-label">Nama</label>
-                                <input type="text" id="customer-name" name="customer_name" class="form-control" value="<?php echo esc_attr($old['customer_name']); ?>" required <?php disabled($is_logged_in && !empty($lock_fields['customer_name'])); ?>>
+                                <input type="text" id="customer-name" name="customer_name" class="form-control" value="<?php echo esc_attr($old['customer_name']); ?>" required <?php echo $is_logged_in && !empty($lock_fields['customer_name']) ? 'readonly' : ''; ?>>
                             </div>
 
                             <?php if ($is_logged_in) : ?>
@@ -153,7 +153,7 @@ $lock_fields = isset($lock_fields) && is_array($lock_fields) ? $lock_fields : ar
 
                             <div class="col-12">
                                 <label for="customer-address" class="form-label">Alamat Lengkap</label>
-                                <textarea id="customer-address" name="customer_address" rows="4" class="form-control" required <?php disabled($is_logged_in && !empty($lock_fields['customer_address'])); ?>><?php echo esc_textarea($old['customer_address']); ?></textarea>
+                                <textarea id="customer-address" name="customer_address" rows="4" class="form-control" required <?php echo $is_logged_in && !empty($lock_fields['customer_address']) ? 'readonly' : ''; ?>><?php echo esc_textarea($old['customer_address']); ?></textarea>
                             </div>
 
                             <div class="col-12">
