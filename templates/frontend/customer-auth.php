@@ -10,6 +10,53 @@ if (!defined('ABSPATH')) {
             background-color: #F83C89;
         }
 
+        .custom-plugin-customer-auth #loginform {
+            display: grid;
+            gap: 16px;
+            margin: 0;
+        }
+
+        .custom-plugin-customer-auth #loginform p {
+            margin: 0;
+        }
+
+        .custom-plugin-customer-auth #loginform label {
+            display: block;
+            margin-bottom: 6px;
+            font-weight: 500;
+        }
+
+        .custom-plugin-customer-auth #loginform input[type="text"],
+        .custom-plugin-customer-auth #loginform input[type="email"],
+        .custom-plugin-customer-auth #loginform input[type="password"] {
+            width: 100%;
+            padding: 10px 12px;
+            border: 1px solid #ced4da;
+            border-radius: 8px;
+        }
+
+        .custom-plugin-customer-auth #loginform input[type="text"]:focus,
+        .custom-plugin-customer-auth #loginform input[type="email"]:focus,
+        .custom-plugin-customer-auth #loginform input[type="password"]:focus {
+            border-color: #F83C89;
+            outline: 0;
+            box-shadow: 0 0 0 .25rem rgba(248, 60, 137, .25);
+        }
+
+        .custom-plugin-customer-auth #loginform .login-remember label {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-weight: 400;
+            margin: 0;
+        }
+
+        .custom-plugin-customer-auth #loginform .login-remember input[type="checkbox"] {
+            width: 18px;
+            height: 18px;
+            margin: 0;
+        }
+
         .custom-plugin-customer-auth #loginform input[type="submit"],
         .custom-plugin-customer-auth .custom-plugin-auth-btn {
             --bs-btn-color: #fff;
@@ -28,6 +75,9 @@ if (!defined('ABSPATH')) {
             color: #fff;
             background-color: #F83C89;
             border-color: #F83C89;
+            border-radius: 10px;
+            padding: 12px 14px;
+            width: 100%;
         }
     </style>
     <div class="row justify-content-center">
@@ -71,6 +121,12 @@ if (!defined('ABSPATH')) {
                                 'remember'       => true,
                             ));
                             ?>
+                            <div class="d-flex flex-column flex-sm-row justify-content-between align-items-sm-center gap-2 mt-3">
+                                <a class="small" href="<?php echo esc_url(wp_lostpassword_url(get_permalink())); ?>">Lupa password?</a>
+                                <button type="button" class="btn btn-link p-0 small text-decoration-none" data-bs-toggle="pill" data-bs-target="#customer-register-panel" aria-controls="customer-register-panel">
+                                    Belum punya akun? Register
+                                </button>
+                            </div>
                         </div>
 
                         <div class="tab-pane fade <?php echo $register_tab_active ? 'show active' : ''; ?>" id="customer-register-panel" role="tabpanel" aria-labelledby="customer-register-tab" tabindex="0">

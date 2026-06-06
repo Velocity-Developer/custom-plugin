@@ -3,8 +3,11 @@
 if (!defined('ABSPATH')) {
     exit;
 }
+
+$embedded = isset($embedded) ? (bool) $embedded : false;
+$wrapper_class = $embedded ? 'custom-plugin-customer-form' : 'custom-plugin-customer-form container py-4';
 ?>
-<div class="custom-plugin-customer-form container py-4">
+<div class="<?php echo esc_attr($wrapper_class); ?>">
     <style>
         .custom-plugin-customer-form .custom-plugin-submit-customer-btn {
             --bs-btn-color: #fff;
@@ -19,8 +22,10 @@ if (!defined('ABSPATH')) {
             --bs-btn-active-border-color: #d82f73;
         }
     </style>
-    <div class="row justify-content-center">
-        <div class="col-12">
+    <?php if (!$embedded) : ?>
+        <div class="row justify-content-center">
+            <div class="col-12">
+            <?php endif; ?>
             <div class="card shadow-sm border-0">
                 <div class="card-body p-4 p-md-5">
                     <div class="mb-4">
@@ -86,6 +91,8 @@ if (!defined('ABSPATH')) {
                     </form>
                 </div>
             </div>
+            <?php if (!$embedded) : ?>
+            </div>
         </div>
-    </div>
+    <?php endif; ?>
 </div>
