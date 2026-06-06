@@ -142,10 +142,13 @@ class OrderMetaBoxes
       $customer_name = (string) get_post_meta($post_id, '_order_customer_name', true);
       $customer_phone = (string) get_post_meta($post_id, '_order_customer_phone', true);
       $customer_city = (string) get_post_meta($post_id, '_order_customer_city', true);
+      $customer_user_id = (string) get_post_meta($post_id, '_order_customer_user_id', true);
+      $customer_status = $customer_user_id !== '' ? 'Customer Login' : 'Guest / Belum Login';
 
       echo '<strong>' . esc_html($customer_name !== '' ? $customer_name : '-') . '</strong><br>';
       echo '<span>' . esc_html($customer_phone !== '' ? $customer_phone : '-') . '</span><br>';
-      echo '<span style="color:#646970;">' . esc_html($customer_city !== '' ? $customer_city : '-') . '</span>';
+      echo '<span style="color:#646970;">' . esc_html($customer_city !== '' ? $customer_city : '-') . '</span><br>';
+      echo '<span style="color:#2271b1;">' . esc_html($customer_status) . '</span>';
       return;
     }
 

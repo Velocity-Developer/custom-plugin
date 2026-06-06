@@ -375,6 +375,7 @@ class Shortcode
             'post_type'   => 'order',
             'post_status' => 'publish',
             'post_title'  => sprintf('Order %s - %s', current_time('YmdHis'), $customer_name),
+            'post_author' => $customer_user_id,
         ), true);
 
         if (is_wp_error($order_id) || !$order_id) {
@@ -737,38 +738,15 @@ class Shortcode
             return array();
         }
 
-        $meta_query = array(
-            'relation' => 'OR',
-            array(
-                'key'     => '_order_customer_user_id',
-                'value'   => (string) $user_id,
-                'compare' => '=',
-            ),
-        );
-
-        if ($user->user_email !== '') {
-            $meta_query[] = array(
-                'key'     => '_order_customer_email',
-                'value'   => (string) $user->user_email,
-                'compare' => '=',
-            );
-        }
-
-        if ($user->user_login !== '') {
-            $meta_query[] = array(
-                'key'     => '_order_customer_username',
-                'value'   => (string) $user->user_login,
-                'compare' => '=',
-            );
-        }
-
+        $customer_full_name = (string) get_user_meta($user_id, '_customer_full_name', true);
+        $customer_display_name = (string) $user->display_name;
         $orders = get_posts(array(
             'post_type'      => 'order',
-            'post_status'    => array('publish', 'draft', 'pending', 'private'),
-            'posts_per_page' => 20,
+            'post_status'    => array('publish', 'draft', 'pending', 'private', 'future'),
+            'posts_per_page' => 100,
             'orderby'        => 'date',
             'order'          => 'DESC',
-            'meta_query'     => $meta_query,
+            'suppress_filters' => false,
         ));
 
         if (empty($orders)) {
@@ -777,6 +755,12 @@ class Shortcode
 
         $items = array();
         foreach ($orders as $order) {
+            if (!$this->order_belongs_to_customer($order, $user_id, $user, $customer_full_name, $customer_display_name)) {
+                continue;
+            }
+
+            $this->sync_order_customer_identity($order->ID, $user_id, $user, $customer_full_name);
+
             $status = (string) get_post_meta($order->ID, '_order_order_status', true);
             $quantity = (int) get_post_meta($order->ID, '_order_product_quantity', true);
             $unit_price = (int) get_post_meta($order->ID, '_order_product_unit_price', true);
@@ -798,6 +782,66 @@ class Shortcode
         }
 
         return $items;
+    }
+
+    private function order_belongs_to_customer($order, $user_id, \WP_User $user, $customer_full_name, $customer_display_name)
+    {
+        if (!$order instanceof \WP_Post) {
+            return false;
+        }
+
+        if ((int) $order->post_author === (int) $user_id) {
+            return true;
+        }
+
+        $stored_user_id = (string) get_post_meta($order->ID, '_order_customer_user_id', true);
+        if ($stored_user_id !== '' && $stored_user_id === (string) $user_id) {
+            return true;
+        }
+
+        $stored_email = (string) get_post_meta($order->ID, '_order_customer_email', true);
+        if ($stored_email !== '' && $user->user_email !== '' && strcasecmp($stored_email, $user->user_email) === 0) {
+            return true;
+        }
+
+        $stored_username = (string) get_post_meta($order->ID, '_order_customer_username', true);
+        if ($stored_username !== '' && $user->user_login !== '' && strcasecmp($stored_username, $user->user_login) === 0) {
+            return true;
+        }
+
+        $stored_name = (string) get_post_meta($order->ID, '_order_customer_name', true);
+        if ($stored_name !== '' && $customer_full_name !== '' && strcasecmp($stored_name, $customer_full_name) === 0) {
+            return true;
+        }
+
+        if ($stored_name !== '' && $customer_display_name !== '' && strcasecmp($stored_name, $customer_display_name) === 0) {
+            return true;
+        }
+
+        return false;
+    }
+
+    private function sync_order_customer_identity($order_id, $user_id, \WP_User $user, $customer_full_name)
+    {
+        $stored_user_id = (string) get_post_meta($order_id, '_order_customer_user_id', true);
+        $stored_email = (string) get_post_meta($order_id, '_order_customer_email', true);
+        $stored_username = (string) get_post_meta($order_id, '_order_customer_username', true);
+
+        if ($stored_user_id === '') {
+            update_post_meta($order_id, '_order_customer_user_id', (string) $user_id);
+        }
+
+        if ($stored_email === '' && $user->user_email !== '') {
+            update_post_meta($order_id, '_order_customer_email', (string) $user->user_email);
+        }
+
+        if ($stored_username === '' && $user->user_login !== '') {
+            update_post_meta($order_id, '_order_customer_username', (string) $user->user_login);
+        }
+
+        if ($customer_full_name !== '' && (string) get_post_meta($order_id, '_order_customer_name', true) === '') {
+            update_post_meta($order_id, '_order_customer_name', $customer_full_name);
+        }
     }
 
     private function get_payment_method_labels()
