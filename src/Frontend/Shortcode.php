@@ -479,7 +479,7 @@ class Shortcode
 
     private function get_old_input()
     {
-        return array(
+        $defaults = array(
             'product_id'       => isset($_GET['product_id']) ? absint($_GET['product_id']) : 0,
             'quantity'         => isset($_GET['quantity']) ? absint($_GET['quantity']) : 1,
             'customer_name'    => isset($_GET['customer_name']) ? sanitize_text_field(wp_unslash($_GET['customer_name'])) : '',
@@ -492,6 +492,17 @@ class Shortcode
             'delivery_time'    => isset($_GET['delivery_time']) ? sanitize_text_field(wp_unslash($_GET['delivery_time'])) : '',
             'payment_method'   => isset($_GET['payment_method']) ? sanitize_text_field(wp_unslash($_GET['payment_method'])) : '',
         );
+
+        if ($defaults['delivery_date'] === '') {
+            $defaults['delivery_date'] = current_time('Y-m-d');
+        }
+
+        if ($defaults['delivery_time'] === '') {
+            $timestamp = current_time('timestamp') + HOUR_IN_SECONDS;
+            $defaults['delivery_time'] = date_i18n('H:i', $timestamp);
+        }
+
+        return $defaults;
     }
 
     private function redirect_with_feedback($status)
