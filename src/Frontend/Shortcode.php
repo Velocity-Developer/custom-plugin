@@ -743,45 +743,67 @@ class Shortcode
         $orders = get_posts(array(
             'post_type'      => 'order',
             'post_status'    => array('publish', 'draft', 'pending', 'private', 'future'),
-            'posts_per_page' => 100,
+            'posts_per_page' => 50,
             'orderby'        => 'date',
             'order'          => 'DESC',
-            'suppress_filters' => false,
+            'meta_key'       => '_order_customer_user_id',
+            'meta_value'     => (string) $user_id,
         ));
+
+        if (empty($orders)) {
+            $orders = get_posts(array(
+                'post_type'      => 'order',
+                'post_status'    => array('publish', 'draft', 'pending', 'private', 'future'),
+                'posts_per_page' => 100,
+                'orderby'        => 'date',
+                'order'          => 'DESC',
+                'suppress_filters' => false,
+            ));
+        }
 
         if (empty($orders)) {
             return array();
         }
 
         $items = array();
+        $seen_order_ids = array();
         foreach ($orders as $order) {
             if (!$this->order_belongs_to_customer($order, $user_id, $user, $customer_full_name, $customer_display_name)) {
                 continue;
             }
 
+            if (isset($seen_order_ids[$order->ID])) {
+                continue;
+            }
+            $seen_order_ids[$order->ID] = true;
+
             $this->sync_order_customer_identity($order->ID, $user_id, $user, $customer_full_name);
-
-            $status = (string) get_post_meta($order->ID, '_order_order_status', true);
-            $quantity = (int) get_post_meta($order->ID, '_order_product_quantity', true);
-            $unit_price = (int) get_post_meta($order->ID, '_order_product_unit_price', true);
-            $total_price = (int) get_post_meta($order->ID, '_order_total_price', true);
-
-            $items[] = array(
-                'id'             => $order->ID,
-                'title'          => $order->post_title,
-                'date'           => get_the_date('d M Y H:i', $order),
-                'product_name'   => (string) get_post_meta($order->ID, '_order_product_name', true),
-                'quantity'       => $quantity,
-                'unit_price'     => $unit_price,
-                'total_price'    => $total_price,
-                'delivery_date'  => (string) get_post_meta($order->ID, '_order_delivery_date', true),
-                'delivery_time'  => (string) get_post_meta($order->ID, '_order_delivery_time', true),
-                'payment_method' => (string) get_post_meta($order->ID, '_order_payment_method', true),
-                'order_status'   => $status,
-            );
+            $items[] = $this->build_customer_order_item($order);
         }
 
         return $items;
+    }
+
+    private function build_customer_order_item($order)
+    {
+        $status = (string) get_post_meta($order->ID, '_order_order_status', true);
+        $quantity = (int) get_post_meta($order->ID, '_order_product_quantity', true);
+        $unit_price = (int) get_post_meta($order->ID, '_order_product_unit_price', true);
+        $total_price = (int) get_post_meta($order->ID, '_order_total_price', true);
+
+        return array(
+            'id'             => $order->ID,
+            'title'          => $order->post_title,
+            'date'           => get_the_date('d M Y H:i', $order),
+            'product_name'   => (string) get_post_meta($order->ID, '_order_product_name', true),
+            'quantity'       => $quantity,
+            'unit_price'     => $unit_price,
+            'total_price'    => $total_price,
+            'delivery_date'  => (string) get_post_meta($order->ID, '_order_delivery_date', true),
+            'delivery_time'  => (string) get_post_meta($order->ID, '_order_delivery_time', true),
+            'payment_method' => (string) get_post_meta($order->ID, '_order_payment_method', true),
+            'order_status'   => $status,
+        );
     }
 
     private function order_belongs_to_customer($order, $user_id, \WP_User $user, $customer_full_name, $customer_display_name)

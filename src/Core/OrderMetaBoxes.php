@@ -73,11 +73,16 @@ class OrderMetaBoxes
     $this->render_text_row('Nama Konsumen', 'customer_name', $values['customer_name']);
     $this->render_text_row('Email Customer', 'customer_email', $values['customer_email']);
     $this->render_text_row('Username Customer', 'customer_username', $values['customer_username']);
-    $this->render_text_row('User ID Customer', 'customer_user_id', $values['customer_user_id']);
+    $this->render_text_row('ID Customer Login', 'customer_user_id', $values['customer_user_id']);
     $this->render_text_row('No. Telepon', 'customer_phone', $values['customer_phone']);
     $this->render_textarea_row('Alamat Lengkap', 'customer_address', $values['customer_address']);
     $this->render_text_row('Kota', 'customer_city', $values['customer_city']);
     $this->render_text_row('Titik GPS', 'customer_gps', $values['customer_gps'], 'Contoh: -6.200000, 106.816666');
+    $this->render_display_row('ID Produk', (string) get_post_meta($post->ID, '_order_product_id', true));
+    $this->render_display_row('Nama Produk', (string) get_post_meta($post->ID, '_order_product_name', true));
+    $this->render_display_row('Jumlah Produk', (string) get_post_meta($post->ID, '_order_product_quantity', true));
+    $this->render_display_row('Harga Satuan', $this->format_price((int) get_post_meta($post->ID, '_order_product_unit_price', true)));
+    $this->render_display_row('Total Harga', $this->format_price((int) get_post_meta($post->ID, '_order_total_price', true)));
     $this->render_text_row('Tanggal Kirim', 'delivery_date', $values['delivery_date'], '', 'date');
     $this->render_text_row('Jam Kirim', 'delivery_time', $values['delivery_time'], '', 'time');
     $this->render_select_row(
@@ -447,6 +452,14 @@ class OrderMetaBoxes
       echo '<p class="description">' . esc_html($description) . '</p>';
     }
     echo '</td>';
+    echo '</tr>';
+  }
+
+  private function render_display_row($label, $value)
+  {
+    echo '<tr>';
+    echo '<th scope="row">' . esc_html($label) . '</th>';
+    echo '<td><strong>' . esc_html($value !== '' ? $value : '-') . '</strong></td>';
     echo '</tr>';
   }
 
