@@ -3,6 +3,8 @@
 if (!defined('ABSPATH')) {
     exit;
 }
+
+$lock_fields = isset($lock_fields) && is_array($lock_fields) ? $lock_fields : array();
 ?>
 <div class="custom-plugin-order-form container py-4">
     <style>
@@ -128,10 +130,15 @@ if (!defined('ABSPATH')) {
 
                             <div class="col-12 col-md-6">
                                 <label for="customer-name" class="form-label">Nama</label>
-                                <input type="text" id="customer-name" name="customer_name" class="form-control" value="<?php echo esc_attr($old['customer_name']); ?>" required>
+                                <input type="text" id="customer-name" name="customer_name" class="form-control" value="<?php echo esc_attr($old['customer_name']); ?>" required <?php disabled($is_logged_in && !empty($lock_fields['customer_name'])); ?>>
                             </div>
 
-                            <?php if (!$is_logged_in) : ?>
+                            <?php if ($is_logged_in) : ?>
+                                <div class="col-12 col-md-6">
+                                    <label for="customer-email" class="form-label">Email</label>
+                                    <input type="email" id="customer-email" class="form-control" value="<?php echo esc_attr($logged_in_email); ?>" disabled>
+                                </div>
+                            <?php else : ?>
                                 <div class="col-12 col-md-6">
                                     <label for="customer-email" class="form-label">Email</label>
                                     <input type="email" id="customer-email" name="customer_email" class="form-control" value="<?php echo esc_attr($old['customer_email']); ?>" required>
@@ -140,13 +147,13 @@ if (!defined('ABSPATH')) {
                             <?php endif; ?>
 
                             <div class="col-12 col-md-6">
-                                <label for="customer-phone" class="form-label">No. Telepon</label>
-                                <input type="text" id="customer-phone" name="customer_phone" class="form-control" value="<?php echo esc_attr($old['customer_phone']); ?>" required>
+                                <label for="customer-phone" class="form-label">No. WhatsApp</label>
+                                <input type="text" id="customer-phone" name="customer_phone" class="form-control" value="<?php echo esc_attr($old['customer_phone']); ?>" required <?php echo $is_logged_in && !empty($lock_fields['customer_phone']) ? 'readonly' : ''; ?>>
                             </div>
 
                             <div class="col-12">
                                 <label for="customer-address" class="form-label">Alamat Lengkap</label>
-                                <textarea id="customer-address" name="customer_address" rows="4" class="form-control" required><?php echo esc_textarea($old['customer_address']); ?></textarea>
+                                <textarea id="customer-address" name="customer_address" rows="4" class="form-control" required <?php disabled($is_logged_in && !empty($lock_fields['customer_address'])); ?>><?php echo esc_textarea($old['customer_address']); ?></textarea>
                             </div>
 
                             <div class="col-12">

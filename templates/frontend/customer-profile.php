@@ -24,6 +24,9 @@ if (!defined('ABSPATH')) {
                         <dt class="col-5 text-body-secondary fw-normal">Kota</dt>
                         <dd class="col-7"><?php echo esc_html($profile['city_label'] !== '' ? $profile['city_label'] : '-'); ?></dd>
 
+                        <dt class="col-5 text-body-secondary fw-normal">WhatsApp</dt>
+                        <dd class="col-7"><?php echo esc_html(isset($profile['whatsapp']) && $profile['whatsapp'] !== '' ? $profile['whatsapp'] : '-'); ?></dd>
+
                         <dt class="col-5 text-body-secondary fw-normal">Alamat</dt>
                         <dd class="col-7"><?php echo nl2br(esc_html($profile['address'] !== '' ? $profile['address'] : '-')); ?></dd>
                     </dl>

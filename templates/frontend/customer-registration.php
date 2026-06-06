@@ -44,6 +44,11 @@ if (!defined('ABSPATH')) {
                         </div>
 
                         <div class="col-12">
+                            <label for="customer-whatsapp" class="form-label">No. WhatsApp</label>
+                            <input type="text" id="customer-whatsapp" name="customer_whatsapp" class="form-control" value="<?php echo esc_attr(isset($profile['whatsapp']) ? $profile['whatsapp'] : ''); ?>" required>
+                        </div>
+
+                        <div class="col-12">
                             <label for="customer-address" class="form-label">Alamat</label>
                             <textarea id="customer-address" name="customer_address" rows="4" class="form-control" required><?php echo esc_textarea($profile['address']); ?></textarea>
                         </div>

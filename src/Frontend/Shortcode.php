@@ -98,12 +98,50 @@ class Shortcode
         }
 
         $old = $this->get_old_input();
+        $is_logged_in = is_user_logged_in();
         $logged_in_city = '';
-        if (is_user_logged_in()) {
-            $logged_in_city = (string) get_user_meta(get_current_user_id(), '_customer_city', true);
+        $logged_in_email = '';
+        $lock_fields = array(
+            'customer_name'    => false,
+            'customer_address' => false,
+            'customer_email'   => false,
+            'customer_phone'   => false,
+        );
+
+        if ($is_logged_in) {
+            $user_id = get_current_user_id();
+            $current_user = wp_get_current_user();
+            $logged_in_email = (string) $current_user->user_email;
+            $logged_in_city = (string) get_user_meta($user_id, '_customer_city', true);
+            $profile_name = (string) get_user_meta($user_id, '_customer_full_name', true);
+            $profile_address = (string) get_user_meta($user_id, '_customer_address', true);
+            $profile_whatsapp = (string) get_user_meta($user_id, '_customer_whatsapp', true);
+            $profile_phone = (string) get_user_meta($user_id, '_customer_phone', true);
+
+            if ($old['customer_name'] === '') {
+                $old['customer_name'] = $profile_name !== '' ? $profile_name : (string) $current_user->display_name;
+            }
+
+            if ($old['customer_address'] === '' && $profile_address !== '') {
+                $old['customer_address'] = $profile_address;
+            }
+
+            if ($old['customer_phone'] === '') {
+                if ($profile_whatsapp !== '') {
+                    $old['customer_phone'] = $profile_whatsapp;
+                } elseif ($profile_phone !== '') {
+                    $old['customer_phone'] = $profile_phone;
+                }
+            }
+
             if ($old['customer_city'] === '' && $logged_in_city !== '') {
                 $old['customer_city'] = $logged_in_city;
             }
+
+            $lock_fields['customer_name'] = $profile_name !== '';
+            $lock_fields['customer_address'] = $profile_address !== '';
+            $lock_fields['customer_email'] = $logged_in_email !== '';
+            $lock_fields['customer_phone'] = $profile_whatsapp !== '';
         }
 
         return Template::get('frontend/order-form', array(
@@ -120,7 +158,9 @@ class Shortcode
             ),
             'city_options'      => $city_options,
             'logged_in_city'    => $logged_in_city,
-            'is_logged_in'      => is_user_logged_in(),
+            'logged_in_email'   => $logged_in_email,
+            'lock_fields'       => $lock_fields,
+            'is_logged_in'      => $is_logged_in,
         ));
     }
 
@@ -371,6 +411,11 @@ class Shortcode
             $this->redirect_with_feedback('missing_fields');
         }
 
+        if (is_user_logged_in() && $customer_user_id > 0 && $customer_phone !== '') {
+            update_user_meta($customer_user_id, '_customer_whatsapp', $customer_phone);
+            update_user_meta($customer_user_id, '_customer_phone', $customer_phone);
+        }
+
         $product = get_post($product_id);
         if (!$product || $product->post_type !== 'produk' || $product->post_status !== 'publish') {
             $this->redirect_with_feedback('invalid_product');
@@ -502,13 +547,14 @@ class Shortcode
 
         $current_user = wp_get_current_user();
         $full_name = isset($_POST['customer_full_name']) ? sanitize_text_field(wp_unslash($_POST['customer_full_name'])) : '';
+        $whatsapp = isset($_POST['customer_whatsapp']) ? sanitize_text_field(wp_unslash($_POST['customer_whatsapp'])) : '';
         $address = isset($_POST['customer_address']) ? sanitize_textarea_field(wp_unslash($_POST['customer_address'])) : '';
         $city = isset($_POST['customer_city']) ? sanitize_text_field(wp_unslash($_POST['customer_city'])) : '';
         $city_options = $this->get_customer_city_options();
         $city_values = wp_list_pluck($city_options, 'value');
         $current_ktp_id = (int) get_user_meta($current_user->ID, '_customer_ktp_attachment_id', true);
 
-        if ($full_name === '' || $address === '' || $city === '' || !in_array($city, $city_values, true)) {
+        if ($full_name === '' || $whatsapp === '' || $address === '' || $city === '' || !in_array($city, $city_values, true)) {
             $this->redirect_customer_with_feedback('missing_fields');
         }
 
@@ -523,6 +569,8 @@ class Shortcode
         }
 
         update_user_meta($current_user->ID, '_customer_full_name', $full_name);
+        update_user_meta($current_user->ID, '_customer_whatsapp', $whatsapp);
+        update_user_meta($current_user->ID, '_customer_phone', $whatsapp);
         update_user_meta($current_user->ID, '_customer_address', $address);
         update_user_meta($current_user->ID, '_customer_city', $city);
         update_user_meta($current_user->ID, '_customer_ktp_attachment_id', $ktp_attachment_id);
@@ -624,6 +672,7 @@ class Shortcode
 
         return array(
             'full_name'         => (string) get_user_meta($user_id, '_customer_full_name', true),
+            'whatsapp'          => (string) get_user_meta($user_id, '_customer_whatsapp', true),
             'address'           => (string) get_user_meta($user_id, '_customer_address', true),
             'city'              => $city,
             'city_label'        => $this->get_customer_city_label($city),
