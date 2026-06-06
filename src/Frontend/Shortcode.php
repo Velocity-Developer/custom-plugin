@@ -315,6 +315,7 @@ class Shortcode
         $product_id = isset($_POST['product_id']) ? absint($_POST['product_id']) : 0;
         $quantity = isset($_POST['quantity']) ? max(1, absint($_POST['quantity'])) : 1;
         $customer_name = isset($_POST['customer_name']) ? sanitize_text_field(wp_unslash($_POST['customer_name'])) : '';
+        $customer_email_input = isset($_POST['customer_email']) ? sanitize_email(wp_unslash($_POST['customer_email'])) : '';
         $customer_phone = isset($_POST['customer_phone']) ? sanitize_text_field(wp_unslash($_POST['customer_phone'])) : '';
         $customer_address = isset($_POST['customer_address']) ? sanitize_textarea_field(wp_unslash($_POST['customer_address'])) : '';
         $customer_gps = isset($_POST['customer_gps']) ? sanitize_text_field(wp_unslash($_POST['customer_gps'])) : '';
@@ -322,7 +323,7 @@ class Shortcode
         $delivery_time = isset($_POST['delivery_time']) ? sanitize_text_field(wp_unslash($_POST['delivery_time'])) : '';
         $payment_method = isset($_POST['payment_method']) ? sanitize_text_field(wp_unslash($_POST['payment_method'])) : '';
         $customer_city = isset($_POST['customer_city']) ? sanitize_text_field(wp_unslash($_POST['customer_city'])) : '';
-        $customer_user_id = get_current_user_id();
+        $customer_user_id = is_user_logged_in() ? get_current_user_id() : 0;
         $customer_email = '';
         $customer_username = '';
         $city_values = wp_list_pluck($this->get_customer_city_options(), 'value');
@@ -347,11 +348,18 @@ class Shortcode
             if ($profile_city !== '') {
                 $customer_city = $profile_city;
             }
+        } else {
+            $customer_email = $customer_email_input;
+        }
+
+        if (!is_user_logged_in() && $customer_email !== '' && !is_email($customer_email)) {
+            $this->redirect_with_feedback('missing_fields');
         }
 
         if (
             $product_id < 1 ||
             $customer_name === '' ||
+            (!is_user_logged_in() && $customer_email === '') ||
             $customer_phone === '' ||
             $customer_address === '' ||
             $customer_city === '' ||
@@ -398,7 +406,9 @@ class Shortcode
         update_post_meta($order_id, '_order_product_quantity', (string) $quantity);
         update_post_meta($order_id, '_order_product_unit_price', (string) $unit_price);
         update_post_meta($order_id, '_order_total_price', (string) $total_price);
-        update_post_meta($order_id, '_order_customer_user_id', (string) $customer_user_id);
+        if ($customer_user_id > 0) {
+            update_post_meta($order_id, '_order_customer_user_id', (string) $customer_user_id);
+        }
 
         $this->redirect_with_feedback('created');
     }
@@ -427,6 +437,7 @@ class Shortcode
             'product_id'       => isset($_GET['product_id']) ? absint($_GET['product_id']) : 0,
             'quantity'         => isset($_GET['quantity']) ? absint($_GET['quantity']) : 1,
             'customer_name'    => isset($_GET['customer_name']) ? sanitize_text_field(wp_unslash($_GET['customer_name'])) : '',
+            'customer_email'   => isset($_GET['customer_email']) ? sanitize_email(wp_unslash($_GET['customer_email'])) : '',
             'customer_phone'   => isset($_GET['customer_phone']) ? sanitize_text_field(wp_unslash($_GET['customer_phone'])) : '',
             'customer_address' => isset($_GET['customer_address']) ? sanitize_textarea_field(wp_unslash($_GET['customer_address'])) : '',
             'customer_city'    => isset($_GET['customer_city']) ? sanitize_text_field(wp_unslash($_GET['customer_city'])) : '',
@@ -450,6 +461,7 @@ class Shortcode
                 'product_id',
                 'quantity',
                 'customer_name',
+                'customer_email',
                 'customer_phone',
                 'customer_address',
                 'customer_city',
@@ -921,7 +933,7 @@ class Shortcode
         $stored_email = (string) get_post_meta($order_id, '_order_customer_email', true);
         $stored_username = (string) get_post_meta($order_id, '_order_customer_username', true);
 
-        if ($stored_user_id === '') {
+        if ($stored_user_id === '' || $stored_user_id === '0') {
             update_post_meta($order_id, '_order_customer_user_id', (string) $user_id);
         }
 

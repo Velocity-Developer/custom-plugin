@@ -148,7 +148,7 @@ class OrderMetaBoxes
       $customer_phone = (string) get_post_meta($post_id, '_order_customer_phone', true);
       $customer_city = (string) get_post_meta($post_id, '_order_customer_city', true);
       $customer_user_id = (string) get_post_meta($post_id, '_order_customer_user_id', true);
-      $customer_status = $customer_user_id !== '' ? 'Customer Login' : 'Guest / Belum Login';
+      $customer_status = ($customer_user_id !== '' && $customer_user_id !== '0') ? 'Customer Login' : 'Guest / Belum Login';
 
       echo '<strong>' . esc_html($customer_name !== '' ? $customer_name : '-') . '</strong><br>';
       echo '<span>' . esc_html($customer_phone !== '' ? $customer_phone : '-') . '</span><br>';

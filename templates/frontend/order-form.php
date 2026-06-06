@@ -131,6 +131,14 @@ if (!defined('ABSPATH')) {
                                 <input type="text" id="customer-name" name="customer_name" class="form-control" value="<?php echo esc_attr($old['customer_name']); ?>" required>
                             </div>
 
+                            <?php if (!$is_logged_in) : ?>
+                                <div class="col-12 col-md-6">
+                                    <label for="customer-email" class="form-label">Email</label>
+                                    <input type="email" id="customer-email" name="customer_email" class="form-control" value="<?php echo esc_attr($old['customer_email']); ?>" required>
+                                    <div class="form-text">Gunakan email yang sama untuk melihat riwayat order setelah login.</div>
+                                </div>
+                            <?php endif; ?>
+
                             <div class="col-12 col-md-6">
                                 <label for="customer-phone" class="form-label">No. Telepon</label>
                                 <input type="text" id="customer-phone" name="customer_phone" class="form-control" value="<?php echo esc_attr($old['customer_phone']); ?>" required>
