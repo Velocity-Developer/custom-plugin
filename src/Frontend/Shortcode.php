@@ -615,11 +615,12 @@ class Shortcode
 
         $full_name = isset($_POST['register_full_name']) ? sanitize_text_field(wp_unslash($_POST['register_full_name'])) : '';
         $email = isset($_POST['register_email']) ? sanitize_email(wp_unslash($_POST['register_email'])) : '';
+        $whatsapp = isset($_POST['register_whatsapp']) ? sanitize_text_field(wp_unslash($_POST['register_whatsapp'])) : '';
         $password = isset($_POST['register_password']) ? (string) wp_unslash($_POST['register_password']) : '';
         $city = isset($_POST['register_city']) ? sanitize_text_field(wp_unslash($_POST['register_city'])) : '';
         $city_values = wp_list_pluck($this->get_customer_city_options(), 'value');
 
-        if ($full_name === '' || $email === '' || $password === '' || $city === '' || !in_array($city, $city_values, true)) {
+        if ($full_name === '' || $email === '' || $whatsapp === '' || $password === '' || $city === '' || !in_array($city, $city_values, true)) {
             $this->redirect_customer_auth('missing_fields');
         }
 
@@ -648,6 +649,8 @@ class Shortcode
         ));
 
         update_user_meta($user_id, '_customer_full_name', $full_name);
+        update_user_meta($user_id, '_customer_whatsapp', $whatsapp);
+        update_user_meta($user_id, '_customer_phone', $whatsapp);
         update_user_meta($user_id, '_customer_city', $city);
 
         $user = get_user_by('id', $user_id);

@@ -149,6 +149,11 @@ if (!defined('ABSPATH')) {
                                 </div>
 
                                 <div class="col-12">
+                                    <label for="register-whatsapp" class="form-label">No. WhatsApp</label>
+                                    <input type="text" id="register-whatsapp" name="register_whatsapp" class="form-control" required>
+                                </div>
+
+                                <div class="col-12">
                                     <label for="register-city" class="form-label">Kota</label>
                                     <select id="register-city" name="register_city" class="form-select" required>
                                         <option value="">Pilih kota</option>
