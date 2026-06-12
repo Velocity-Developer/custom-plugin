@@ -154,6 +154,11 @@ if (!defined('ABSPATH')) {
                                 </div>
 
                                 <div class="col-12">
+                                    <label for="register-address" class="form-label">Alamat</label>
+                                    <textarea id="register-address" name="register_address" rows="4" class="form-control" required></textarea>
+                                </div>
+
+                                <div class="col-12">
                                     <label for="register-city" class="form-label">Kota</label>
                                     <select id="register-city" name="register_city" class="form-select" required>
                                         <option value="">Pilih kota</option>

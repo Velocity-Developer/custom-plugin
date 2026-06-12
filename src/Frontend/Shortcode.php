@@ -151,6 +151,7 @@ class Shortcode
             'feedback'          => $this->get_feedback_message(),
             'old'               => $old,
             'store_settings'    => Admin::get_store_settings(),
+            'delivery_time_options' => $this->get_delivery_time_options(),
             'payment_methods' => array(
                 'bank_transfer'  => 'Transfer Bank',
                 'digital_wallet' => 'QRIS / Dompet Digital',
@@ -338,6 +339,21 @@ class Shortcode
         </style>';
     }
 
+    private function get_delivery_time_options()
+    {
+        return array(
+            '08.00 - 09:00',
+            '09.01 - 10.00',
+            '10.01 - 11.00',
+            '11.01 - 12.00',
+            '12.01 - 13.00',
+            '13.01 - 14.00',
+            '14.01 - 15.00',
+            '15.01 - 16.00',
+            '16.01 - 17.00',
+        );
+    }
+
     public function handle_order_submission()
     {
         if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
@@ -368,6 +384,7 @@ class Shortcode
         $customer_email = '';
         $customer_username = '';
         $city_values = wp_list_pluck($this->get_customer_city_options(), 'value');
+        $delivery_time_options = $this->get_delivery_time_options();
 
         if ($is_logged_in) {
             $current_user = wp_get_current_user();
@@ -406,6 +423,7 @@ class Shortcode
             $customer_city === '' ||
             $delivery_date === '' ||
             $delivery_time === '' ||
+            !in_array($delivery_time, $delivery_time_options, true) ||
             !in_array($payment_method, array('bank_transfer', 'digital_wallet', 'cod'), true) ||
             !in_array($customer_city, $city_values, true)
         ) {
@@ -498,8 +516,8 @@ class Shortcode
         }
 
         if ($defaults['delivery_time'] === '') {
-            $timestamp = current_time('timestamp') + HOUR_IN_SECONDS;
-            $defaults['delivery_time'] = date_i18n('H:i', $timestamp);
+            $delivery_time_options = $this->get_delivery_time_options();
+            $defaults['delivery_time'] = $delivery_time_options[0];
         }
 
         return $defaults;
@@ -616,11 +634,12 @@ class Shortcode
         $full_name = isset($_POST['register_full_name']) ? sanitize_text_field(wp_unslash($_POST['register_full_name'])) : '';
         $email = isset($_POST['register_email']) ? sanitize_email(wp_unslash($_POST['register_email'])) : '';
         $whatsapp = isset($_POST['register_whatsapp']) ? sanitize_text_field(wp_unslash($_POST['register_whatsapp'])) : '';
+        $address = isset($_POST['register_address']) ? sanitize_textarea_field(wp_unslash($_POST['register_address'])) : '';
         $password = isset($_POST['register_password']) ? (string) wp_unslash($_POST['register_password']) : '';
         $city = isset($_POST['register_city']) ? sanitize_text_field(wp_unslash($_POST['register_city'])) : '';
         $city_values = wp_list_pluck($this->get_customer_city_options(), 'value');
 
-        if ($full_name === '' || $email === '' || $whatsapp === '' || $password === '' || $city === '' || !in_array($city, $city_values, true)) {
+        if ($full_name === '' || $email === '' || $whatsapp === '' || $address === '' || $password === '' || $city === '' || !in_array($city, $city_values, true)) {
             $this->redirect_customer_auth('missing_fields');
         }
 
@@ -651,6 +670,7 @@ class Shortcode
         update_user_meta($user_id, '_customer_full_name', $full_name);
         update_user_meta($user_id, '_customer_whatsapp', $whatsapp);
         update_user_meta($user_id, '_customer_phone', $whatsapp);
+        update_user_meta($user_id, '_customer_address', $address);
         update_user_meta($user_id, '_customer_city', $city);
 
         $user = get_user_by('id', $user_id);

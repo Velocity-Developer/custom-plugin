@@ -177,7 +177,14 @@ $lock_fields = isset($lock_fields) && is_array($lock_fields) ? $lock_fields : ar
 
                             <div class="col-12 col-md-6">
                                 <label for="delivery-time" class="form-label">Jam Kirim</label>
-                                <input type="time" id="delivery-time" name="delivery_time" class="form-control" value="<?php echo esc_attr($old['delivery_time']); ?>" required>
+                                <select id="delivery-time" name="delivery_time" class="form-select" required>
+                                    <option value="">Pilih jam kirim</option>
+                                    <?php foreach ($delivery_time_options as $delivery_time_option) : ?>
+                                        <option value="<?php echo esc_attr($delivery_time_option); ?>" <?php selected($old['delivery_time'], $delivery_time_option); ?>>
+                                            <?php echo esc_html($delivery_time_option); ?>
+                                        </option>
+                                    <?php endforeach; ?>
+                                </select>
                             </div>
 
                             <div class="col-12 pt-2">
