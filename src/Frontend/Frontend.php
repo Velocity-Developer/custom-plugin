@@ -19,7 +19,7 @@ class Frontend
         // Example: To activate frontend hooks, uncomment below.
         add_action('wp_enqueue_scripts', array($this, 'enqueue_scripts'));
         add_filter('language_attributes', array($this, 'velocitytheme_color_scheme'));
-        add_action('template_redirect', array($this, 'require_login_for_public_site'));
+        // add_action('template_redirect', array($this, 'require_login_for_public_site'));
         add_action('login_enqueue_scripts', array($this, 'customize_login_screen'));
         add_action('login_header', array($this, 'render_login_topbar'));
         add_action('login_footer', array($this, 'render_login_tabs_script'));
@@ -80,15 +80,7 @@ class Frontend
             return;
         }
 
-        $request_path = wp_parse_url(home_url(add_query_arg(array(), $GLOBALS['wp']->request ?? '')), PHP_URL_PATH);
-        $profile_path = wp_parse_url(site_url('/profile/'), PHP_URL_PATH);
-        $login_path = wp_parse_url(wp_login_url(), PHP_URL_PATH);
-
-        if (!empty($request_path) && ($request_path === $profile_path || $request_path === $login_path)) {
-            return;
-        }
-
-        if (is_page('profile') || $this->is_wp_login_request()) {
+        if ($this->is_profile_request() || $this->is_exempt_public_request()) {
             return;
         }
 
@@ -106,6 +98,47 @@ class Frontend
         $script_name = isset($_SERVER['SCRIPT_NAME']) ? wp_unslash($_SERVER['SCRIPT_NAME']) : '';
 
         return $script_name !== '' && substr($script_name, -12) === 'wp-login.php';
+    }
+
+    /**
+     * Allows public access to the login endpoint and the profile landing page.
+     *
+     * @return bool
+     */
+    private function is_exempt_public_request()
+    {
+        $request_uri = isset($_SERVER['REQUEST_URI']) ? wp_unslash($_SERVER['REQUEST_URI']) : '';
+        $request_path = $request_uri !== '' ? wp_parse_url($request_uri, PHP_URL_PATH) : '';
+        $request_path = is_string($request_path) ? untrailingslashit($request_path) : '';
+
+        $exempt_paths = array(
+            untrailingslashit((string) wp_parse_url(wp_login_url(), PHP_URL_PATH)),
+        );
+
+        if ($request_path !== '' && in_array($request_path, $exempt_paths, true)) {
+            return true;
+        }
+
+        return $this->is_wp_login_request();
+    }
+
+    /**
+     * Detects requests to the public profile/login alias path.
+     *
+     * @return bool
+     */
+    private function is_profile_request()
+    {
+        $request_uri = isset($_SERVER['REQUEST_URI']) ? wp_unslash($_SERVER['REQUEST_URI']) : '';
+        $request_path = $request_uri !== '' ? wp_parse_url($request_uri, PHP_URL_PATH) : '';
+        $request_path = is_string($request_path) ? untrailingslashit($request_path) : '';
+        $profile_path = untrailingslashit((string) wp_parse_url(site_url('/profile/'), PHP_URL_PATH));
+
+        if ($request_path !== '' && $request_path === $profile_path) {
+            return true;
+        }
+
+        return is_page('profile');
     }
 
     /**
