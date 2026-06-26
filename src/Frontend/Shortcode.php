@@ -44,7 +44,7 @@ class Shortcode
     <?php foreach ($terms as $term):
                 $term_link = get_term_link($term);
             ?>
-    <span class="col-lg-4 col-md-4 col-6">
+    <span class="col-4 col-md-3">
         <a href="<?php echo esc_url($term_link); ?>">
             <?php echo esc_html($term->name); ?>
         </a>
