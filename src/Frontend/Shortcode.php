@@ -23,7 +23,7 @@ class Shortcode
 
     /**
      * Shortcode: [store_product_cat_list]
-     * Menampilkan taxonomy store_product_cat dengan Bootstrap 5.3 grid 3 kolom → 2 kolom.
+     * Menampilkan taxonomy store_product_cat - tampilan list sederhana 3 kolom.
      *
      * @return string
      */
@@ -40,29 +40,17 @@ class Shortcode
 
         ob_start();
 ?>
-        <div class="row g-4">
-            <?php foreach ($terms as $term):
+<div class="row g-3">
+    <?php foreach ($terms as $term):
                 $term_link = get_term_link($term);
             ?>
-                <div class="col-lg-4 col-md-6 col-12">
-                    <div class="border p-3 rounded h-100">
-                        <span class="d-block mb-2">
-                            <a href="<?php echo esc_url($term_link); ?>" class="text-decoration-none fw-semibold">
-                                <?php echo esc_html($term->name); ?>
-                            </a>
-                        </span>
-                        <?php if (!empty($term->description)): ?>
-                            <span class="d-block text-muted small">
-                                <?php echo esc_html($term->description); ?>
-                            </span>
-                        <?php endif; ?>
-                        <span class="d-block mt-2">
-                            <a href="<?php echo esc_url($term_link); ?>" class="btn btn-outline-primary btn-sm">Lihat Produk</a>
-                        </span>
-                    </div>
-                </div>
-            <?php endforeach; ?>
-        </div>
+    <span class="col-lg-4 col-md-4 col-6">
+        <a href="<?php echo esc_url($term_link); ?>">
+            <?php echo esc_html($term->name); ?>
+        </a>
+    </span>
+    <?php endforeach; ?>
+</div>
 <?php
         return ob_get_clean();
     }
