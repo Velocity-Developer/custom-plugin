@@ -19,6 +19,7 @@ class Shortcode
     public function __construct()
     {
         add_shortcode('store_product_cat_list', array($this, 'store_product_cat_list'));
+        add_shortcode('login_logout_btn', array($this, 'login_logout_btn'));
     }
 
     /**
@@ -53,6 +54,38 @@ class Shortcode
 </div>
 <?php
         return ob_get_clean();
+    }
+
+    /**
+     * Shortcode: [login_logout_btn]
+     * Tombol Login / Logout dengan ikon panah merah.
+     *
+     * @return string
+     */
+    public function login_logout_btn()
+    {
+        if (is_user_logged_in()) {
+            $label = 'Logout';
+            $url   = wp_logout_url(home_url());
+        } else {
+            $label = 'Login';
+            $url   = wp_login_url(home_url());
+        }
+
+        // SVG panah keluar (merah) — hanya tampil saat Logout
+        $arrow_svg = '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="#dc3545" viewBox="0 0 16 16">
+            <path fill-rule="evenodd" d="M6 12.5a.5.5 0 0 0 .5.5h8a.5.5 0 0 0 .5-.5v-9a.5.5 0 0 0-.5-.5h-8a.5.5 0 0 0-.5.5v2a.5.5 0 0 1-1 0v-2A1.5 1.5 0 0 1 6.5 2h8A1.5 1.5 0 0 1 16 3.5v9a1.5 1.5 0 0 1-1.5 1.5h-8A1.5 1.5 0 0 1 5 12.5v-2a.5.5 0 0 1 1 0v2z"/>
+            <path fill-rule="evenodd" d="M.146 8.354a.5.5 0 0 1 0-.708l3-3a.5.5 0 1 1 .708.708L1.707 7.5H10.5a.5.5 0 0 1 0 1H1.707l2.147 2.146a.5.5 0 0 1-.708.708l-3-3z"/>
+        </svg>';
+
+        $icon = is_user_logged_in() ? '<span class="me-1">' . $arrow_svg . '</span>' : '';
+
+        return sprintf(
+            '<span class="login-logout-btn"><a href="%s">%s%s</a></span>',
+            esc_url($url),
+            $icon,
+            esc_html($label)
+        );
     }
 
     /**
